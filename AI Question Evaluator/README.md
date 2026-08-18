@@ -18,7 +18,7 @@ This project relies on the following key dependencies:
 - **FastAPI**: High-performance web framework for the API.
 - **Uvicorn**: ASGI web server.
 - **Pydantic**: Data validation and strict structured models (v2).
-- **OpenAI**: Client for the LLM evaluation strategy.
+- **Google GenAI**: Client for the LLM evaluation strategy.
 - **Scalar FastAPI**: Beautiful interactive API documentation.
 - **Pytest**: For running the test suite.
 - **Ruff & Mypy**: For linting and static type checking.
@@ -28,9 +28,9 @@ This project relies on the following key dependencies:
 The application is configured using environment variables (via `pydantic-settings`). You can create a `.env` file in the root directory. 
 
 Key environment variables:
-- `LLM_PROVIDER` (default: `"mock"`): Set to `"openai"` to enable real LLM evaluation.
-- `LLM_MODEL` (default: `"gpt-4o-mini"`): The model used for evaluations.
-- `LLM_API_KEY`: Your OpenAI API key (required if using the OpenAI provider).
+- `LLM_PROVIDER` (default: `"gemini"`): Set to `"gemini"` to enable real LLM evaluation via Google GenAI.
+- `LLM_MODEL` (default: `"gemini-2.5-flash"`): The model used for evaluations.
+- `GEMINI_API_KEY`: Your Gemini API key (required if using the Gemini provider).
 - `LLM_TIMEOUT` (default: `15`): Timeout in seconds for LLM API calls.
 
 ## Setup & Installation
@@ -46,7 +46,7 @@ Ensure you have Python 3.12+ and `uv` installed.
 3. (Optional) Create a `.env` file from the example if you intend to use live LLM features:
    ```bash
    cp .env.example .env
-   # Add your OPENAI_API_KEY in the .env file
+   # Add your GEMINI_API_KEY in the .env file
    ```
 
 ## Run Instructions
