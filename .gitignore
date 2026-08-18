@@ -1,0 +1,38 @@
+# Environments
+.env
+.env.*
+!.env.example
+.venv
+venv/
+env/
+ENV/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.db
+*.sqlite3
+
+# Node / Frontend
+node_modules/
+dist/
+build/
+.vite/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDEs and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+
+# Specific project ignores
+AI Question Generator/alembic.ini
+AI Sales Assistant/backend/alembic.ini
