@@ -19,20 +19,56 @@ The backend is built with FastAPI and PostgreSQL (using pgvector), structured ar
 10. Follow-Up Generator
 11. Escalation
 
-## Setup
+## Dependencies
+**Backend:**
+- Python 3.12+ 
+- PostgreSQL with `pgvector`
+- FastAPI, SQLAlchemy, `google-genai` SDK
 
+**Frontend:**
+- Node.js 20+
+- React, Vite, TypeScript, TailwindCSS
+
+## Configuration
+Configure the application using environment variables.
+
+**Backend Configuration:**
+Create a `.env` file in the `backend/` directory (use `.env.example` as a template):
+```env
+DATABASE_URL=postgresql+asyncpg://user:pass@localhost:5432/db?ssl=require
+JWT_SECRET=super_secret_jwt_key_123
+GEMINI_API_KEY=your_gemini_api_key
+```
+
+**Frontend Configuration:**
+Create a `.env` file in the `frontend/` directory (if needed):
+```env
+VITE_API_URL=http://localhost:8000
+```
+
+## Setup
 ### Backend
 1. Ensure PostgreSQL is running with the `pgvector` extension installed.
-2. Configure `.env` in `backend/` using `.env.example`.
-3. `cd backend`
-4. Install dependencies via pip or pipenv.
-5. Apply Alembic migrations or run `python scripts/seed.py` for initial setup.
-6. Run server: `uvicorn app.main:app --reload`
+2. `cd backend`
+3. Install dependencies via pip or pipenv.
+4. Apply Alembic migrations or run `python scripts/seed.py` for initial setup.
 
 ### Frontend
 1. `cd frontend`
 2. `npm install`
-3. `npm run dev`
+
+## Run Instructions
+**Run Backend:**
+```bash
+cd backend
+uvicorn app.main:app --reload
+```
+
+**Run Frontend:**
+```bash
+cd frontend
+npm run dev
+```
 
 ## Core Requirements Satisfied
 - [x] Identify customer intent and requirements.

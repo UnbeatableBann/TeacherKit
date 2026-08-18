@@ -17,26 +17,37 @@ This is a production-ready software system designed to analyze previous-year exa
   7. Generator -> uses Gemini to create new questions adhering to historical style.
   8. Validator -> verifies marks, ensures no duplicates.
 
-## Setup & Requirements
-### Prerequisites
+## Dependencies
 - Python 3.12+ (managed via `uv`).
 - PostgreSQL with `pgvector` extension installed.
 - Google Gemini API Key.
+- `FastAPI`, `Pydantic v2`, `SQLAlchemy`, `asyncpg`, `PyMuPDF`, `google-genai`.
 
-### Installation
+## Configuration
+Configure the application using environment variables. Create a `.env` file in the root of this project folder:
+```env
+DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/ai_question_generator
+VECTOR_DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/ai_question_generator
+GEMINI_API_KEY=your_api_key_here
+LLM_PROVIDER=gemini
+LLM_MODEL=gemini-2.5-pro
+```
+
+## Setup
 1. Clone the repository.
 2. Ensure you have `uv` installed.
 3. Install dependencies:
    ```bash
    uv sync
    ```
-4. Set up `.env` based on `.env.example`.
-5. Run migrations (requires running DB):
+4. Start your PostgreSQL database and ensure the `pgvector` extension is created.
+5. Run migrations:
    ```bash
    uv run alembic upgrade head
    ```
 
-### Running Locally
+## Run Instructions
+Run the FastAPI development server:
 ```bash
 uv run uvicorn app.main:app --reload
 ```
