@@ -1,17 +1,14 @@
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.analysis.question_analyzer import QuestionAnalyzer
 from app.core.database import get_db
-from app.extraction.question_extractor import QuestionExtractor
 from app.generation.orchestrator import GenerationOrchestrator
-from app.ingestion.parser import DocumentParser
-from app.llm.gemini import get_embedding
-from app.models.domain import Document, Question
+from app.models.domain import Document
 from app.schemas.domain import DocumentResponse, GenerateRequest, GenerationResponse
+from app.services.document_processor import process_document_background
 
 router = APIRouter()
 
@@ -19,76 +16,84 @@ DbSession = Annotated[AsyncSession, Depends(get_db)]
 
 @router.post("/documents", response_model=DocumentResponse)
 async def upload_document(
+    background_tasks: BackgroundTasks,
     file: Annotated[UploadFile, File(...)],
-    subject: Annotated[str, Form(...)],
-    class_level: Annotated[str, Form(...)],
     db: DbSession,
 ):
     try:
+        if file.content_type != "application/pdf":
+            raise HTTPException(status_code=400, detail="Only PDF files are allowed")
+
         content = await file.read()
 
-        # 1. Create DB Record
+        # Create DB Record
         doc = Document(
             id=str(uuid.uuid4()),
             filename=file.filename,
-            subject=subject,
-            class_level=class_level,
-            status="processing",
+            status="uploaded",
         )
         db.add(doc)
         await db.commit()
         await db.refresh(doc)
 
-        # 2. Parse PDF
-        parser = DocumentParser()
-        pages = parser.parse_pdf(content, file.filename)
+        # Trigger background processing
+        background_tasks.add_task(
+            process_document_background,
+            document_id=doc.id,
+            content=content,
+            filename=file.filename
+        )
 
-        # 3. Extract and Analyze Questions
-        extractor = QuestionExtractor()
-        analyzer = QuestionAnalyzer()
-
-        for page in pages:
-            extracted_questions = await extractor.extract_from_text(
-                page["text"], page["page_number"]
-            )
-            for eq in extracted_questions:
-                analysis = await analyzer.analyze(eq, subject, class_level)
-
-                # Combine extracted & analyzed into DB model
-                db_question = Question(
-                    document_id=doc.id,
-                    source_page=page["page_number"],
-                    question_text=eq.question_text,
-                    marks=eq.marks,
-                    options=eq.options,
-                    category=eq.category,
-                    question_type=eq.question_type,
-                    topic=analysis.topic if analysis else "General",
-                    concepts=analysis.concepts if analysis else [],
-                    difficulty=analysis.difficulty if analysis else "Medium",
-                    expected_answer=analysis.expected_answer.model_dump()
-                    if analysis and analysis.expected_answer
-                    else None,
-                )
-
-                # Compute embedding
-                db_question.embedding = await get_embedding(db_question.question_text)
-
-                db.add(db_question)
-
-        doc.status = "completed"
-        await db.commit()
-
-        return doc
+        return DocumentResponse(
+            document_id=doc.id,
+            filename=doc.filename,
+            status=doc.status
+        )
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/generation", response_model=GenerationResponse)
+@router.get("/documents/{document_id}/status", response_model=DocumentResponse)
+async def get_document_status(document_id: str, db: DbSession):
+    doc = await db.get(Document, document_id)
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+    
+    return DocumentResponse(
+        document_id=doc.id,
+        filename=doc.filename,
+        status=doc.status
+    )
+
+
+@router.post("/generations", response_model=GenerationResponse)
 async def generate_questions(
     request: GenerateRequest, db: DbSession
 ):
+    if not request.document_ids:
+        raise HTTPException(status_code=400, detail="At least one document_id is required.")
+
+    # Validate that all documents exist and are READY
+    not_ready = []
+    for doc_id in request.document_ids:
+        doc = await db.get(Document, doc_id)
+        if not doc:
+            raise HTTPException(status_code=404, detail=f"Document {doc_id} not found.")
+        if doc.status != "ready":
+            not_ready.append({"document_id": doc.id, "status": doc.status})
+
+    if not_ready:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "code": "DOCUMENTS_NOT_READY",
+                "message": "One or more documents are still being processed or failed.",
+                "documents": not_ready
+            }
+        )
+
+    # Proceed with generation
     orchestrator = GenerationOrchestrator(db)
     try:
         return await orchestrator.process_generation_request(request)
