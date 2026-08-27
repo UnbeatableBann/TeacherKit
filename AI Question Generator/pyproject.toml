@@ -17,8 +17,14 @@ dependencies = [
     "pydantic-settings>=2.15.0",
     "pymupdf>=1.28.2",
     "pytest>=9.1.1",
+    "python-multipart>=0.0.32",
     "ruff>=0.16.3",
     "sqlalchemy>=2.0.52",
     "tenacity>=9.1.4",
     "uvicorn>=0.52.3",
+]
+
+[dependency-groups]
+dev = [
+    "pytest-asyncio>=1.4.0",
 ]
