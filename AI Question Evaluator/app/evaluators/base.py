@@ -174,7 +174,7 @@ class SubjectPlugin(ABC):
                 else "incomplete_or_inaccurate_response"
             )
             error.severity = "major" if score < 40 else "minor"
-            error.explanation = " ".join(d for e in ev for d in e.details[:2])
+            error.explanation = " ".join(list(dict.fromkeys(d for e in ev for d in e.details[:2])))
             num = next((e for e in ev if e.strategy == "numeric_comparison"), None)
             if num and num.payload:
                 error.distance_from_correct = {
