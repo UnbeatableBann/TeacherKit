@@ -20,38 +20,34 @@ async def upload_document(
     file: Annotated[UploadFile, File(...)],
     db: DbSession,
 ):
-    try:
-        if file.content_type != "application/pdf":
-            raise HTTPException(status_code=400, detail="Only PDF files are allowed")
+    if file.content_type != "application/pdf":
+        raise HTTPException(status_code=400, detail="Only PDF files are allowed")
 
-        content = await file.read()
+    content = await file.read()
 
-        # Create DB Record
-        doc = Document(
-            id=str(uuid.uuid4()),
-            filename=file.filename,
-            status="uploaded",
-        )
-        db.add(doc)
-        await db.commit()
-        await db.refresh(doc)
+    # Create DB Record
+    doc = Document(
+        id=str(uuid.uuid4()),
+        filename=file.filename,
+        status="uploaded",
+    )
+    db.add(doc)
+    await db.commit()
+    await db.refresh(doc)
 
-        # Trigger background processing
-        background_tasks.add_task(
-            process_document_background,
-            document_id=doc.id,
-            content=content,
-            filename=file.filename
-        )
+    # Trigger background processing
+    background_tasks.add_task(
+        process_document_background,
+        document_id=doc.id,
+        content=content,
+        filename=file.filename
+    )
 
-        return DocumentResponse(
-            document_id=doc.id,
-            filename=doc.filename,
-            status=doc.status
-        )
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    return DocumentResponse(
+        document_id=doc.id,
+        filename=doc.filename,
+        status=doc.status
+    )
 
 
 @router.get("/documents/{document_id}/status", response_model=DocumentResponse)
@@ -95,7 +91,4 @@ async def generate_questions(
 
     # Proceed with generation
     orchestrator = GenerationOrchestrator(db)
-    try:
-        return await orchestrator.process_generation_request(request)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    return await orchestrator.process_generation_request(request)

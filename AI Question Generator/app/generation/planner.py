@@ -38,8 +38,6 @@ class GenerationPlanner:
             if q.marks:
                 marks_counts[q.marks] += 1
 
-        total_history = len(questions)
-
         planned_questions: list[QuestionPlanSchema] = []
         for i in range(request.total_questions):
             # Resolve user constraints or fallback to historical majority

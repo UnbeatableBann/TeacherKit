@@ -31,7 +31,7 @@ class QuestionExtractor:
                 system_prompt=system_prompt,
             )
             return result.questions
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             # Handle empty or malformed pages gracefully
             print(f"Failed to extract questions: {e}")
             return []

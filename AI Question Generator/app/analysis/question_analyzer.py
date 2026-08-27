@@ -30,6 +30,6 @@ class QuestionAnalyzer:
                 response_schema=AnalyzedQuestionSchema,
                 system_prompt=system_prompt,
             )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             print(f"Failed to analyze question: {e}")
             return None

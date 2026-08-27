@@ -72,7 +72,7 @@ async def process_document_background(document_id: str, content: bytes, filename
             logger.info(f"Document {document_id} successfully processed and marked ready.")
 
         except Exception as e:
-            logger.exception(f"Error processing document {document_id}: {e}")
+            logger.exception(f"Error processing document {document_id}")
             # Try to mark as failed
             try:
                 doc = await db.get(Document, document_id)
@@ -80,5 +80,5 @@ async def process_document_background(document_id: str, content: bytes, filename
                     doc.status = "failed"
                     doc.metadata_ = {"error": str(e)}
                     await db.commit()
-            except Exception as inner_e:
+            except Exception as inner_e:  # noqa: BLE001
                 logger.error(f"Failed to update document status to failed: {inner_e}")

@@ -1,6 +1,5 @@
 import json
 import logging
-from typing import TypeVar
 
 from google import genai
 from google.genai import types
@@ -10,14 +9,13 @@ from app.core.config import settings
 logger = logging.getLogger(__name__)
 
 client = genai.Client(api_key=settings.GEMINI_API_KEY)
-T = TypeVar("T")
 
 
-async def generate_structured(
+async def generate_structured[T](
     prompt: str,
     response_schema: type[T],
     system_prompt: str = "",
-    model: str = None,
+    model: str | None = None,
     max_retries: int = 3,
 ) -> T:
     """
@@ -45,7 +43,7 @@ async def generate_structured(
 
             data = json.loads(text.strip())
             return response_schema(**data)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.warning(f"Generation attempt {attempt + 1} failed: {e}")
             last_err = e
 
