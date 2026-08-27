@@ -36,3 +36,6 @@ Thumbs.db
 # Specific project ignores
 AI Question Generator/alembic.ini
 AI Sales Assistant/backend/alembic.ini
+
+# TODO
+TODO.md
