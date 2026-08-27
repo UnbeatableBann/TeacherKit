@@ -1,4 +1,5 @@
 import logging
+import sys
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -9,6 +10,12 @@ from app.api.endpoints import router as api_router
 from app.core.config import settings
 from app.core.database import db_manager
 
+# Configure logging based on env
+logging.basicConfig(
+    stream=sys.stdout,
+    level=getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO),
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+)
 logger = logging.getLogger(__name__)
 
 @asynccontextmanager
