@@ -1,9 +1,11 @@
-from fastapi.testclient import TestClient
-import pytest
 import os
 from unittest.mock import patch
-from app.main import app
+
+import pytest
+from fastapi.testclient import TestClient
+
 from app.llm.contract import LLMEvidenceResponse
+from app.main import app
 
 client = TestClient(app)
 
@@ -64,7 +66,7 @@ def test_objective_llm_not_interfering_exact_match():
     }
 
     # We shouldn't even call the LLM because it's objective, but we can mock it just in case
-    with patch("app.strategies.llm.get_llm_evaluator") as mock_get_evaluator:
+    with patch("app.strategies.llm.get_llm_evaluator"):
         response = client.post("/api/v1/evaluations", json=payload)
         assert response.status_code == 200
 
