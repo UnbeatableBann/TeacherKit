@@ -22,6 +22,7 @@ class SessionState(BaseModel):
     
 from dataclasses import dataclass
 
+
 @dataclass
 class PluginContext:
     db: AsyncSession

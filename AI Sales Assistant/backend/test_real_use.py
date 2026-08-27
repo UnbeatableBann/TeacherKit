@@ -1,11 +1,12 @@
 import asyncio
-import sys
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
 from app.config import settings
-from app.models.domain import Product, ProductEmbedding
-from app.plugins.base import SessionState, PluginContext
+from app.plugins.base import PluginContext, SessionState
 from app.plugins.catalogue_retrieval import CatalogueRetrievalPlugin
 from app.schemas.domain import RequirementSchema
+
 
 async def main():
     engine = create_async_engine(settings.DATABASE_URL, echo=True)
@@ -13,7 +14,7 @@ async def main():
         from sqlalchemy import text
         await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
         from app.models.base import Base
-        from app.models.domain import Product, ProductEmbedding # Ensure models are loaded
+        from app.models.domain import Product  # Ensure models are loaded
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
 

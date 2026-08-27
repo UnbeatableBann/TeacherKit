@@ -29,6 +29,18 @@ app.include_router(leads.router, prefix="/leads", tags=["leads"])
 app.include_router(catalogue.router, prefix="/catalogue", tags=["catalogue"])
 app.include_router(escalations.router, prefix="/escalations", tags=["escalations"])
 
+from fastapi import Request
+from fastapi.responses import JSONResponse
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    log.exception("unhandled_server_error", method=request.method, path=request.url.path, exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error. Please try again later."},
+    )
+
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
