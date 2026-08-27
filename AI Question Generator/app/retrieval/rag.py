@@ -11,7 +11,7 @@ class RAGService:
         self.db = db
 
     async def retrieve_historical_context(
-        self, topic: str, difficulty: str, limit: int = 3
+        self, topic: str, difficulty: str, document_ids: list[str], limit: int = 3
     ) -> list[Question]:
         """
         Retrieves historical questions for the given topic and difficulty.
@@ -24,6 +24,7 @@ class RAGService:
 
         stmt = (
             select(Question)
+            .where(Question.document_id.in_(document_ids))
             .where(Question.topic == topic)
             .where(Question.difficulty == difficulty)
             .order_by(Question.embedding.l2_distance(topic_embedding))

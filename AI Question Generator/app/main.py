@@ -7,7 +7,7 @@ from scalar_fastapi import get_scalar_api_reference
 
 from app.api.endpoints import router as api_router
 from app.core.config import settings
-from app.core.database import engine
+from app.core.database import db_manager
 
 logger = logging.getLogger(__name__)
 
@@ -15,10 +15,11 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     # Startup actions
     logger.info("Starting up AI Question Generator...")
+    db_manager.init_db()
     yield
     # Shutdown actions
     logger.info("Shutting down AI Question Generator...")
-    await engine.dispose()
+    await db_manager.close_db()
 
 app = FastAPI(
     title=settings.PROJECT_NAME,

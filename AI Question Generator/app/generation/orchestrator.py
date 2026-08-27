@@ -29,7 +29,7 @@ class GenerationOrchestrator:
             # Bounded regeneration loop
             for attempt in range(settings.MAX_GENERATION_ATTEMPTS):
                 generated = await self.generator.generate_single_question(
-                    q_plan, request.subject, request.class_level
+                    q_plan, request.subject, request.class_level, request.document_ids
                 )
 
                 is_valid, reason = await self.validator.validate(

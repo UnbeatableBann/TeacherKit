@@ -15,11 +15,9 @@ class GenerationPlanner:
         """
         Builds a generation plan based on historical patterns or explicit user constraints.
         """
-        # Fetch historical questions for the given subject and class_level
+        # Fetch historical questions for the selected documents
         stmt = select(Question).where(
-            Question.document.has(
-                subject=request.subject, class_level=request.class_level
-            )
+            Question.document_id.in_(request.document_ids)
         )
         result = await self.db.execute(stmt)
         questions = result.scalars().all()

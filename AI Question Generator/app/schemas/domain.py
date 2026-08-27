@@ -6,13 +6,11 @@ from app.models.domain import DifficultyLevel, QuestionCategory, QuestionType
 
 
 class DocumentResponse(BaseModel):
-    id: str
+    document_id: str
     filename: str
-    subject: str | None = None
-    class_level: str | None = None
     status: str
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 
 class AnswerSchema(BaseModel):
@@ -60,6 +58,7 @@ class GenerationPlanSchema(BaseModel):
 
 
 class GenerateRequest(BaseModel):
+    document_ids: list[str]
     subject: str
     class_level: str
     total_questions: int

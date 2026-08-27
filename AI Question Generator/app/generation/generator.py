@@ -11,13 +11,13 @@ class QuestionGenerator:
         self.rag = RAGService(db)
 
     async def generate_single_question(
-        self, plan: QuestionPlanSchema, subject: str, class_level: str
+        self, plan: QuestionPlanSchema, subject: str, class_level: str, document_ids: list[str]
     ) -> GeneratedQuestionResponse:
         """
         Generates a single question based on the plan and retrieved historical context.
         """
         historical_context = await self.rag.retrieve_historical_context(
-            plan.topic, plan.difficulty.value
+            plan.topic, plan.difficulty.value, document_ids
         )
         context_str = "\n".join(
             [f"- {q.question_text} (Marks: {q.marks})" for q in historical_context]
