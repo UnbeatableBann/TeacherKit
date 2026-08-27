@@ -1,6 +1,6 @@
 from typing import Any
 
-import fitz  # PyMuPDF
+import pymupdf
 
 
 class DocumentParser:
@@ -8,7 +8,7 @@ class DocumentParser:
         """
         Parses a PDF into pages and extracts text while trying to retain some structure.
         """
-        doc = fitz.open(stream=file_bytes, filetype="pdf")
+        doc = pymupdf.open(stream=file_bytes, filetype="pdf")
         pages = []
         for page_num in range(len(doc)):
             page = doc[page_num]
