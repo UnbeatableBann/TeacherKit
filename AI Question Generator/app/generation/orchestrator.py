@@ -24,24 +24,26 @@ class GenerationOrchestrator:
     ) -> GenerationResponse:
         plan = await self.planner.build_plan(request)
 
-        generated_questions = []
-        for q_plan in plan.questions:
-            # Bounded regeneration loop
-            for attempt in range(settings.MAX_GENERATION_ATTEMPTS):
-                generated = await self.generator.generate_single_question(
-                    q_plan, request.subject, request.class_level, request.document_ids
-                )
+        # Batch generate all questions at once to prevent 429 Too Many Requests
+        try:
+            batch_generated = await self.generator.generate_batch_questions(
+                plan.questions, request.subject, request.class_level, request.document_ids
+            )
+        except Exception as e:
+            # Handle failure to generate entirely
+            raise RuntimeError(f"Failed to generate questions: {e}")
 
-                is_valid, reason = await self.validator.validate(
-                    generated, request.subject
-                )
-                if is_valid:
-                    generated.validation_status = "passed"
-                    generated_questions.append(generated)
-                    break
-                elif attempt == settings.MAX_GENERATION_ATTEMPTS - 1:
-                    generated.validation_status = f"failed: {reason}"
-                    generated_questions.append(generated)
+        generated_questions = []
+        for generated, q_plan in zip(batch_generated, plan.questions):
+            is_valid, reason = await self.validator.validate(
+                generated, request.subject
+            )
+            if is_valid:
+                generated.validation_status = "passed"
+                generated_questions.append(generated)
+            else:
+                generated.validation_status = f"failed: {reason}"
+                generated_questions.append(generated)
 
         return GenerationResponse(
             generation_id=str(uuid.uuid4()),
