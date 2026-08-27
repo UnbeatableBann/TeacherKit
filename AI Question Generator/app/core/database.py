@@ -29,7 +29,6 @@ class DatabaseManager:
             return
         
         # We need to explicitly import the models so that Base.metadata knows about them
-        from app.models.domain import Document, Question
         
         async with self.engine.begin() as conn:
             from sqlalchemy import text
