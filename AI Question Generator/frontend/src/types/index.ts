@@ -1,7 +1,8 @@
 export interface DocumentResponse {
   document_id: string;
   filename: string;
-  status: "uploaded" | "processing" | "ready" | "failed";
+  status: "uploaded" | "processing" | "ready" | "failed" | "uploading";
+  uploadProgress?: number;
 }
 
 export interface MarkingSchemeItem {

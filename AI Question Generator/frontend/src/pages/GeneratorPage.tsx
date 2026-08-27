@@ -40,10 +40,14 @@ export function GeneratorPage() {
   const handleFileSelect = async (file: File) => {
     // Optimistic UI update
     const tempId = `temp_${Date.now()}_${file.name}`;
-    setDocuments(prev => [...prev, { document_id: tempId, filename: file.name, status: 'uploaded' }]);
+    setDocuments(prev => [...prev, { document_id: tempId, filename: file.name, status: 'uploading', uploadProgress: 0 }]);
     
     try {
-      const response = await uploadDocument(file);
+      const response = await uploadDocument(file, (progress) => {
+        setDocuments(prev => prev.map(d => 
+          d.document_id === tempId ? { ...d, status: 'uploading', uploadProgress: progress } : d
+        ));
+      });
       // Replace temp document with real one
       setDocuments(prev => prev.map(d => d.document_id === tempId ? response : d));
     } catch (err) {

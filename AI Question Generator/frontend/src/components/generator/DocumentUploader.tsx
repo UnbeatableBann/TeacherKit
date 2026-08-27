@@ -29,6 +29,7 @@ export function DocumentUploader({ documents, onFileSelect, onRemove }: Document
         return <CheckCircle2 className="w-5 h-5 text-green-500" />;
       case 'failed':
         return <XCircle className="w-5 h-5 text-red-500" />;
+      case 'uploading':
       case 'processing':
       case 'uploaded':
         return <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />;
@@ -37,12 +38,13 @@ export function DocumentUploader({ documents, onFileSelect, onRemove }: Document
     }
   };
 
-  const getStatusText = (status: string) => {
+  const getStatusText = (status: string, progress?: number) => {
     switch (status) {
       case 'ready': return 'Ready';
       case 'failed': return 'Failed';
       case 'processing': return 'Processing...';
-      case 'uploaded': return 'Uploading...';
+      case 'uploaded': return 'Processing...';
+      case 'uploading': return `Uploading... ${progress || 0}%`;
       default: return status;
     }
   };
@@ -75,7 +77,15 @@ export function DocumentUploader({ documents, onFileSelect, onRemove }: Document
       {documents.length > 0 ? (
         <div className="space-y-2">
           {documents.map((doc) => (
-            <div key={doc.document_id} className="flex items-center justify-between p-3 bg-card border border-border rounded-lg shadow-sm animate-in fade-in">
+            <div key={doc.document_id} className="relative overflow-hidden p-3 bg-card border border-border rounded-lg shadow-sm animate-in fade-in flex items-center justify-between">
+              
+              {doc.status === 'uploading' && (
+                <div 
+                  className="absolute bottom-0 left-0 h-1 bg-blue-500 transition-all duration-300"
+                  style={{ width: `${doc.uploadProgress || 0}%` }}
+                />
+              )}
+
               <div className="flex items-center gap-3 overflow-hidden">
                 <FileText className="w-5 h-5 text-indigo-500 shrink-0" />
                 <span className="text-sm font-medium truncate" title={doc.filename}>{doc.filename}</span>
@@ -84,10 +94,9 @@ export function DocumentUploader({ documents, onFileSelect, onRemove }: Document
                 <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                   {getStatusIcon(doc.status)}
                   <span className={doc.status === 'failed' ? 'text-red-500' : ''}>
-                    {getStatusText(doc.status)}
+                    {getStatusText(doc.status, doc.uploadProgress)}
                   </span>
                 </div>
-                {/* Always allow removing if needed */}
                 <button 
                   onClick={() => onRemove(doc.document_id)}
                   className="text-muted-foreground hover:text-destructive transition-colors text-xs"
