@@ -1,4 +1,5 @@
 import uuid
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,13 +15,14 @@ from app.schemas.domain import DocumentResponse, GenerateRequest, GenerationResp
 
 router = APIRouter()
 
+DbSession = Annotated[AsyncSession, Depends(get_db)]
 
 @router.post("/documents", response_model=DocumentResponse)
 async def upload_document(
-    file: UploadFile = File(...),
-    subject: str = Form(...),
-    class_level: str = Form(...),
-    db: AsyncSession = Depends(get_db),
+    file: Annotated[UploadFile, File(...)],
+    subject: Annotated[str, Form(...)],
+    class_level: Annotated[str, Form(...)],
+    db: DbSession,
 ):
     try:
         content = await file.read()
@@ -85,7 +87,7 @@ async def upload_document(
 
 @router.post("/generation", response_model=GenerationResponse)
 async def generate_questions(
-    request: GenerateRequest, db: AsyncSession = Depends(get_db)
+    request: GenerateRequest, db: DbSession
 ):
     orchestrator = GenerationOrchestrator(db)
     try:

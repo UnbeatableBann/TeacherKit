@@ -19,6 +19,7 @@ dependencies = [
     "pytest>=9.1.1",
     "python-multipart>=0.0.32",
     "ruff>=0.16.3",
+    "scalar-fastapi>=1.8.2",
     "sqlalchemy>=2.0.52",
     "tenacity>=9.1.4",
     "uvicorn>=0.52.3",
