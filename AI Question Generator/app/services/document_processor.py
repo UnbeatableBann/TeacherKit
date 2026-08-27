@@ -33,39 +33,40 @@ async def process_document_background(document_id: str, content: bytes, filename
             parser = DocumentParser()
             pages = parser.parse_pdf(content, filename)
 
-            # 3. Extract and Analyze Questions
+            # 3. Extract all questions at once from full text
+            full_text = "\n\n".join([f"--- Page {p['page_number']} ---\n{p['text']}" for p in pages])
             extractor = QuestionExtractor()
+            extracted_questions = await extractor.extract_from_text(full_text)
+
+            # 4. Analyze all questions at once
             analyzer = QuestionAnalyzer()
+            analyses = await analyzer.analyze_batch(extracted_questions, "Unknown", "Unknown")
 
-            for page in pages:
-                extracted_questions = await extractor.extract_from_text(
-                    page["text"], page["page_number"]
+            # 5. Save to DB
+            for eq, analysis in zip(extracted_questions, analyses):
+                # We don't have page level granularity for individual questions anymore if they are from full text,
+                # but we can just use 1 for now or try to parse section/page if the model returned it.
+                # Assuming source_question_number or page is not strictly required.
+                
+                db_question = Question(
+                    document_id=doc.id,
+                    source_page=1, # Default to 1 for batched extraction
+                    question_text=eq.question_text,
+                    marks=eq.marks,
+                    options=eq.options,
+                    category=eq.category,
+                    question_type=eq.question_type,
+                    topic=analysis.topic if analysis else "General",
+                    concepts=analysis.concepts if analysis else [],
+                    difficulty=analysis.difficulty if analysis else "Medium",
+                    expected_answer=analysis.expected_answer.model_dump()
+                    if analysis and analysis.expected_answer
+                    else None,
                 )
-                for eq in extracted_questions:
-                    # In V2, we might not have subject/class_level yet because they are provided at generation.
-                    # We can pass "Unknown" or the document's subject if it was provided, but V2 removes it from upload.
-                    analysis = await analyzer.analyze(eq, "Unknown", "Unknown")
 
-                    # Combine extracted & analyzed into DB model
-                    db_question = Question(
-                        document_id=doc.id,
-                        source_page=page["page_number"],
-                        question_text=eq.question_text,
-                        marks=eq.marks,
-                        options=eq.options,
-                        category=eq.category,
-                        question_type=eq.question_type,
-                        topic=analysis.topic if analysis else "General",
-                        concepts=analysis.concepts if analysis else [],
-                        difficulty=analysis.difficulty if analysis else "Medium",
-                        expected_answer=analysis.expected_answer.model_dump()
-                        if analysis and analysis.expected_answer
-                        else None,
-                    )
-
-                    # Compute embedding
-                    db_question.embedding = await get_embedding(db_question.question_text)
-                    db.add(db_question)
+                # Compute embedding
+                db_question.embedding = await get_embedding(db_question.question_text)
+                db.add(db_question)
 
             doc.status = "ready"
             await db.commit()

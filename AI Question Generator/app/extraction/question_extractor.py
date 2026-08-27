@@ -11,10 +11,10 @@ class ExtractionResult(BaseModel):
 
 class QuestionExtractor:
     async def extract_from_text(
-        self, text: str, page_number: int
+        self, text: str
     ) -> list[ExtractedQuestionSchema]:
         """
-        Extracts structured questions from raw page text.
+        Extracts structured questions from raw document text.
         """
         system_prompt = (
             "You are an expert examination parser. Your task is to extract individual questions "
@@ -22,7 +22,7 @@ class QuestionExtractor:
             "marks, and question type accurately."
         )
 
-        prompt = f"Extract all questions from the following text (Page {page_number}):\n\n{text}"
+        prompt = f"Extract all questions from the following text:\n\n{text}"
 
         try:
             result = await generate_structured(

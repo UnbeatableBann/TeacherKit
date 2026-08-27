@@ -3,33 +3,52 @@ from app.llm.gemini import generate_structured
 from app.schemas.domain import AnalyzedQuestionSchema, ExtractedQuestionSchema
 
 
+from pydantic import BaseModel
+
+class BatchAnalysisResult(BaseModel):
+    results: list[AnalyzedQuestionSchema]
+
+
 class QuestionAnalyzer:
-    async def analyze(
-        self, question: ExtractedQuestionSchema, subject: str, class_level: str
-    ) -> AnalyzedQuestionSchema | None:
+    async def analyze_batch(
+        self, questions: list[ExtractedQuestionSchema], subject: str, class_level: str
+    ) -> list[AnalyzedQuestionSchema]:
         """
-        Analyzes an extracted question to determine topic, concepts, difficulty, and expected answer.
+        Analyzes a batch of extracted questions to determine topic, concepts, difficulty, and expected answer.
         """
+        if not questions:
+            return []
+
         system_prompt = (
             f"You are an expert {subject} educator for class level {class_level}. "
-            "Analyze the provided question and return structured metadata including the exact topic, "
-            "key concepts tested, difficulty level, and expected answer structure. "
+            "Analyze the provided batch of questions and return a list of structured metadata results in the EXACT same order. "
+            "For each question, determine the exact topic, key concepts tested, difficulty level, and expected answer structure. "
             "Base difficulty on required reasoning depth, number of steps, and conceptual complexity."
         )
 
-        prompt = (
-            f"Question: {question.question_text}\n"
-            f"Type: {question.question_type.value}\n"
-            f"Marks: {question.marks}\n"
-            f"Options: {question.options}\n"
-        )
+        prompt_lines = ["Analyze the following questions:\n"]
+        for i, q in enumerate(questions):
+            prompt_lines.append(f"--- Question {i+1} ---")
+            prompt_lines.append(f"Text: {q.question_text}")
+            prompt_lines.append(f"Type: {q.question_type.value}")
+            prompt_lines.append(f"Marks: {q.marks}")
+            prompt_lines.append(f"Options: {q.options}\n")
+        
+        prompt = "\n".join(prompt_lines)
 
         try:
-            return await generate_structured(
+            result = await generate_structured(
                 prompt=prompt,
-                response_schema=AnalyzedQuestionSchema,
+                response_schema=BatchAnalysisResult,
                 system_prompt=system_prompt,
             )
+            
+            # Pad with None if LLM returned fewer results than questions
+            analyzed = result.results
+            while len(analyzed) < len(questions):
+                analyzed.append(None)
+            
+            return analyzed[:len(questions)]
         except Exception as e:  # noqa: BLE001
-            print(f"Failed to analyze question: {e}")
-            return None
+            print(f"Failed to analyze questions: {e}")
+            return [None] * len(questions)
