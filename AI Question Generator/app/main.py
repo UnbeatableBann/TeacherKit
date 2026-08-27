@@ -16,6 +16,7 @@ async def lifespan(app: FastAPI):
     # Startup actions
     logger.info("Starting up AI Question Generator...")
     db_manager.init_db()
+    await db_manager.init_schema()
     yield
     # Shutdown actions
     logger.info("Shutting down AI Question Generator...")

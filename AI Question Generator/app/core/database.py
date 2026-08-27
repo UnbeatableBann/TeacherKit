@@ -24,6 +24,18 @@ class DatabaseManager:
                 expire_on_commit=False,
             )
 
+    async def init_schema(self):
+        if self.engine is None:
+            return
+        
+        # We need to explicitly import the models so that Base.metadata knows about them
+        from app.models.domain import Document, Question
+        
+        async with self.engine.begin() as conn:
+            from sqlalchemy import text
+            await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+            await conn.run_sync(Base.metadata.create_all)
+
     async def close_db(self):
         if self.engine is not None:
             await self.engine.dispose()
