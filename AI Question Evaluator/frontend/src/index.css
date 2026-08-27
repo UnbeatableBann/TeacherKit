@@ -97,4 +97,24 @@
   .label-text {
     @apply text-sm font-medium leading-none text-[var(--color-text-primary)] peer-disabled:cursor-not-allowed peer-disabled:opacity-70;
   }
+  
+  .gradient-text {
+    @apply text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600;
+  }
+  
+  .glass-panel {
+    @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-xl;
+  }
+  
+  .animated-gradient-bg {
+    background: linear-gradient(-45deg, #eff6ff, #f8fafc, #e0e7ff, #f1f5f9);
+    background-size: 400% 400%;
+    animation: gradientBG 15s ease infinite;
+  }
+  
+  @keyframes gradientBG {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
 }

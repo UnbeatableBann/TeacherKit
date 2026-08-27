@@ -41,9 +41,11 @@ export function EvaluationResult({ result, request }: EvaluationResultProps) {
     }
   };
 
+  const color = result.status === "correct" ? "#15803D" : result.status === "partially_correct" ? "#B45309" : "#B91C1C";
+
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <Card className="border-border">
+    <div className="space-y-6">
+      <Card className="glass-panel overflow-hidden border-t-4" style={{ borderTopColor: color }}>
         <CardContent className="p-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>

@@ -46,7 +46,7 @@ export function EvaluationForm({ onSubmit, isLoading }: EvaluationFormProps) {
   };
 
   return (
-    <Card>
+    <Card className="glass-panel">
       <CardHeader>
         <CardTitle>Evaluate Student Answer</CardTitle>
         <CardDescription>Enter the evaluation rubric and the student's response below.</CardDescription>
