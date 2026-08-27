@@ -2,7 +2,6 @@ from app.evaluators.base import SubjectPlugin
 from app.strategies.core import (
     ConceptStrategy,
     ExactStrategy,
-    FactualStrategy,
     OptionStrategy,
     Strategy,
     UnitBasedStrategy,
@@ -19,7 +18,6 @@ class HistoryPlugin(SubjectPlugin):
             OptionStrategy(),
             ExactStrategy(),
             ConceptStrategy(),
-            FactualStrategy(),
             LLMStrategy(),
             UnitBasedStrategy(),
         ]

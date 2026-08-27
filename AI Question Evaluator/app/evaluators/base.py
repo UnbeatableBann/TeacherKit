@@ -126,16 +126,20 @@ class SubjectPlugin(ABC):
                 mis = e.payload.get("missing", [])
                 if isinstance(mis, list):
                     missing += [str(x) for x in mis]
-        concepts = ConceptAnalysis(
-            correct=list(dict.fromkeys(covered)), missing=list(dict.fromkeys(missing))
-        )
+        
+        # Reconciliation: if any strategy (like LLM) marks it as covered, it's not missing.
+        correct_set = list(dict.fromkeys(covered))
+        missing_set = [m for m in dict.fromkeys(missing) if m not in correct_set]
+        
+        concepts = ConceptAnalysis(correct=correct_set, missing=missing_set)
+        
+        total_expected = len(c.reference_answer.expected_concepts) if c.reference_answer.expected_concepts else (len(concepts.correct) + len(concepts.missing))
+        
         dims = {
-            "correctness": Dimension(score=score, evidence=[d for e in ev for d in e.details]),
+            "correctness": Dimension(score=score, evidence=list(dict.fromkeys(d for e in ev for d in e.details))),
             "completeness": Dimension(
                 score=round(
-                    100
-                    * len(concepts.correct)
-                    / max(1, len(concepts.correct) + len(concepts.missing)),
+                    100 * len(concepts.correct) / max(1, total_expected),
                     2,
                 ),
                 evidence=[
