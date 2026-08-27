@@ -77,3 +77,20 @@ For production, the application is ready to be containerized using the included 
 docker build -t ai-evaluation-engine .
 docker run -p 8000:8000 --env-file .env ai-evaluation-engine
 ```
+
+## AI Model Selection
+
+The engine uses **Google GenAI (Gemini 2.5 Flash)** as its primary LLM evaluator (via `LLMStrategy`). 
+- **Why Gemini 2.5 Flash?**: It was selected for its blazing-fast inference speed, cost-effectiveness, and large context window. Educational evaluations require near real-time feedback (especially for subjective essay grading), and Gemini 2.5 Flash provides the perfect balance between high-reasoning capability (needed for step-by-step logic, concept extraction, and misconception identification) and extremely low latency compared to heavier reasoning models.
+
+## Known Limitations & Future Improvements
+
+**Known Limitations:**
+- **Text-Only Input**: V1 is strictly restricted to text inputs. It currently lacks OCR pipelines for handwritten assignments, image parsing for geometry/diagrams, and ASR for voice inputs.
+- **Basic Unit Parsing**: The `UnitBasedStrategy` currently uses simplistic token-splitting to isolate numbers from unit strings. It may struggle with highly complex, non-standard compound units without advanced regex normalization.
+- **Rigid Formula Normalization**: Algebraic formula equivalence relies on basic string replacement (e.g. replacing `²` with `^2`) rather than a full Computer Algebra System (CAS).
+
+**Suggested Future Improvements:**
+- **SymPy Integration**: Implement a true mathematical solver in the `FormulaStrategy` to correctly assert that algebraically equivalent expressions (e.g., `x(y+z)` and `xy+xz`) match.
+- **OCR Pre-processing**: Hook the `StudentAnswer` ingestion pipeline to a vision model (like Gemini 2.5 Pro Vision) or OCR service to support handwritten test papers and diagrams.
+- **Async LLM Calls**: Shifting the `LLMStrategy` to use an asynchronous GenAI client (`await evaluator.evaluate_answer(...)`) would drastically improve server throughput and concurrency.
