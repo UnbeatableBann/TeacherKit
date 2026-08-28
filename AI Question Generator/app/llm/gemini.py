@@ -18,12 +18,13 @@ async def generate_structured[T: BaseModel](
     response_schema: type[T],
     system_prompt: str = "",
     model: str | None = None,
-    max_retries: int = 3,
+    max_retries: int | None = None,
 ) -> T:
     """
     Generate a structured response matching the Pydantic schema using Gemini.
     """
     model_name = model or settings.LLM_MODEL
+    retries = max_retries if max_retries is not None else settings.MAX_GENERATION_ATTEMPTS
 
     config = types.GenerateContentConfig(
         system_instruction=system_prompt,
@@ -33,7 +34,7 @@ async def generate_structured[T: BaseModel](
     )
 
     last_err = None
-    for attempt in range(max_retries):
+    for attempt in range(retries):
         try:
             response = await client.aio.models.generate_content(
                 model=model_name, contents=prompt, config=config
@@ -50,7 +51,7 @@ async def generate_structured[T: BaseModel](
             last_err = e
 
     raise RuntimeError(
-        f"Failed to generate structured output after {max_retries} attempts. Last error: {last_err}"
+        f"Failed to generate structured output after {retries} attempts. Last error: {last_err}"
     )
 
 
@@ -63,8 +64,8 @@ async def get_embeddings_batch(texts: list[str]) -> list[list[float]]:
     Requests are chunked to avoid hitting API limits for large document batches.
     """
     model_name = settings.EMBEDDING_MODEL
-    max_retries = 3
-    chunk_size = 100
+    max_retries = settings.EMBEDDING_RETRY_COUNT
+    chunk_size = settings.EMBEDDING_BATCH_SIZE
     
     all_embeddings: list[list[float]] = []
     

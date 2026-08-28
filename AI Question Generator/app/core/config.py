@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     
     EMBEDDING_MODEL: str = "text-embedding-004"
     EMBEDDING_DIMENSIONS: int = 3072
+    EMBEDDING_BATCH_SIZE: int = 100
+    EMBEDDING_RETRY_COUNT: int = 3
 
     MAX_FILE_SIZE_MB: int = 20
     MAX_GENERATION_ATTEMPTS: int = 3
