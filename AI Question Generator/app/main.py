@@ -50,8 +50,17 @@ from fastapi.responses import JSONResponse
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
+from starlette.exceptions import HTTPException as StarletteHTTPException
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
+    if isinstance(exc, StarletteHTTPException):
+        # Let FastAPI's default HTTPException handler deal with it
+        # or we can just return it ourselves
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={"detail": exc.detail},
+        )
     logger.exception(f"Unhandled server error during {request.method} {request.url.path}")
     return JSONResponse(
         status_code=500,

@@ -91,4 +91,8 @@ async def generate_questions(
 
     # Proceed with generation
     orchestrator = GenerationOrchestrator(db)
-    return await orchestrator.process_generation_request(request)
+    try:
+        return await orchestrator.process_generation_request(request)
+    except RuntimeError as e:
+        # Pass LLM generation errors (like 404 Model Not Found) cleanly to the frontend
+        raise HTTPException(status_code=500, detail=str(e))
