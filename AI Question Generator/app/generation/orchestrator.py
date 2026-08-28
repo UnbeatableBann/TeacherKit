@@ -1,15 +1,14 @@
-import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import settings
 from app.generation.generator import QuestionGenerator
 from app.generation.planner import GenerationPlanner
+from app.models.domain import GeneratedQuestion as DBGeneratedQuestion
+from app.models.domain import GenerationRequest as DBGenerationRequest
 from app.schemas.domain import (
     GenerateRequest,
     GenerationResponse,
 )
-from app.models.domain import GenerationRequest as DBGenerationRequest, GeneratedQuestion as DBGeneratedQuestion
 from app.validation.validator import QuestionValidator
 
 
@@ -35,7 +34,7 @@ class GenerationOrchestrator:
         await self.db.flush()
 
         plan = await self.planner.build_plan(request)
-        db_request.plan_snapshot = plan.model_dump()
+        db_request.plan_snapshot = plan.model_dump()  # type: ignore
         await self.db.flush()
 
         # Batch generate all questions at once to prevent 429 Too Many Requests
@@ -43,8 +42,8 @@ class GenerationOrchestrator:
             batch_generated = await self.generator.generate_batch_questions(
                 plan.questions, request.subject, request.class_level, request.document_ids
             )
-        except Exception as e:
-            db_request.status = "failed"
+        except Exception as e:  # noqa: BLE001
+            db_request.status = "failed"  # type: ignore
             await self.db.commit()
             # Handle failure to generate entirely
             raise RuntimeError(f"Failed to generate questions: {e}")
@@ -68,20 +67,20 @@ class GenerationOrchestrator:
 
             if is_valid:
                 generated.validation_status = "passed"
-                db_q.validation_status = "passed"
+                db_q.validation_status = "passed"  # type: ignore
             else:
                 generated.validation_status = f"failed: {reason}"
-                db_q.validation_status = "failed"
-                db_q.validation_errors = {"reason": reason}
+                db_q.validation_status = "failed"  # type: ignore
+                db_q.validation_errors = {"reason": reason}  # type: ignore
             
             self.db.add(db_q)
             generated_questions.append(generated)
 
-        db_request.status = "completed"
+        db_request.status = "completed"  # type: ignore
         await self.db.commit()
 
         return GenerationResponse(
-            generation_id=db_request.id,
+            generation_id=db_request.id,  # type: ignore
             status="completed",
             subject=request.subject,
             class_level=request.class_level,

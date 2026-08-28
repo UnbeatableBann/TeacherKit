@@ -38,15 +38,15 @@ async def upload_document(
     # Trigger background processing
     background_tasks.add_task(
         process_document_background,
-        document_id=doc.id,
+        document_id=doc.id,  # type: ignore
         content=content,
-        filename=file.filename
+        filename=file.filename or "unknown.pdf"
     )
 
     return DocumentResponse(
-        document_id=doc.id,
-        filename=doc.filename,
-        status=doc.status
+        document_id=doc.id,  # type: ignore
+        filename=doc.filename,  # type: ignore
+        status=doc.status  # type: ignore
     )
 
 
@@ -57,9 +57,9 @@ async def get_document_status(document_id: str, db: DbSession):
         raise HTTPException(status_code=404, detail="Document not found")
     
     return DocumentResponse(
-        document_id=doc.id,
-        filename=doc.filename,
-        status=doc.status
+        document_id=doc.id,  # type: ignore
+        filename=doc.filename,  # type: ignore
+        status=doc.status  # type: ignore
     )
 
 

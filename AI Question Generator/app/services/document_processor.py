@@ -4,7 +4,7 @@ from app.analysis.question_analyzer import QuestionAnalyzer
 from app.core.database import db_manager
 from app.extraction.question_extractor import QuestionExtractor
 from app.ingestion.parser import DocumentParser
-from app.llm.gemini import get_embedding
+from app.llm.gemini import get_embeddings_batch
 from app.models.domain import Document, Question
 
 logger = logging.getLogger(__name__)
@@ -50,37 +50,36 @@ async def process_document_background(document_id: str, content: bytes, filename
                     extracted_questions.extend(chunk_extracted)
                     analyses.extend(chunk_analyses)
 
-            # 5. Save to Vector DB
-            for eq, analysis in zip(extracted_questions, analyses):
-                # We don't have page level granularity for individual questions anymore if they are from full text,
-                # but we can just use 1 for now or try to parse section/page if the model returned it.
-                # Assuming source_question_number or page is not strictly required.
+            # 5. Batch Compute Embeddings for all extracted questions
+            if extracted_questions:
+                texts_to_embed = [eq.question_text for eq in extracted_questions]
+                embeddings = await get_embeddings_batch(texts_to_embed)
                 
-                db_question = Question(
-                    document_id=doc.id,
-                    source_page=1, # Default to 1 for batched extraction
-                    question_text=eq.question_text,
-                    marks=eq.marks,
-                    options=eq.options,
-                    category=eq.category,
-                    question_type=eq.question_type,
-                    topic=analysis.topic if analysis else "General",
-                    concepts=analysis.concepts if analysis else [],
-                    difficulty=analysis.difficulty if analysis else "Medium",
-                    expected_answer=analysis.expected_answer.model_dump()
-                    if analysis and analysis.expected_answer
-                    else None,
-                )
-
-                # Compute embedding for Vector DB RAG
-                db_question.embedding = await get_embedding(db_question.question_text)
-                db.add(db_question)
+                for eq, analysis, emb in zip(extracted_questions, analyses, embeddings):
+                    db_question = Question(
+                        document_id=doc.id,
+                        source_page=1,
+                        question_text=eq.question_text,
+                        marks=eq.marks,
+                        options=eq.options,
+                        category=eq.category,
+                        question_type=eq.question_type,
+                        topic=analysis.topic if analysis else "General",
+                        concepts=analysis.concepts if analysis else [],
+                        difficulty=analysis.difficulty if analysis else "Medium",
+                        expected_answer=analysis.expected_answer.model_dump()
+                        if analysis and analysis.expected_answer
+                        else None,
+                        embedding=emb
+                    )
+                    db.add(db_question)
 
             doc.status = "ready"
             await db.commit()
             logger.info(f"Document {document_id} successfully processed, historical questions embedded, and marked ready. Original PDF discarded.")
 
         except Exception as e:
+            await db.rollback()
             logger.exception(f"Error processing document {document_id}")
             # Try to mark as failed
             try:

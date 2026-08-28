@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str
     LLM_PROVIDER: str = "gemini"
     LLM_MODEL: str = "gemini-2.5-pro"
+    
+    EMBEDDING_MODEL: str = "text-embedding-004"
+    EMBEDDING_DIMENSIONS: int = 3072
 
     MAX_FILE_SIZE_MB: int = 20
     MAX_GENERATION_ATTEMPTS: int = 3
@@ -28,4 +31,4 @@ class Settings(BaseSettings):
     )
 
 
-settings = Settings()
+settings = Settings()  # type: ignore

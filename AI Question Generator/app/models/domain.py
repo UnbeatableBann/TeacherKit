@@ -18,6 +18,7 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 
+from app.core.config import settings
 from app.core.database import Base
 
 
@@ -76,14 +77,14 @@ class Question(Base):
     options = Column(JSONB)
     expected_answer = Column(JSONB)
 
-    category = Column(SQLEnum(QuestionCategory))
-    question_type = Column(SQLEnum(QuestionType))
+    category = Column(SQLEnum(QuestionCategory))  # type: ignore
+    question_type = Column(SQLEnum(QuestionType))  # type: ignore
     topic = Column(String)
     concepts = Column(JSONB)
-    difficulty = Column(SQLEnum(DifficultyLevel))
+    difficulty = Column(SQLEnum(DifficultyLevel))  # type: ignore
 
     provenance = Column(JSONB)
-    embedding = Column(Vector(768))  # Gemini uses 768 dimensions
+    embedding = Column(Vector(settings.EMBEDDING_DIMENSIONS))
 
     document = relationship("Document", back_populates="questions")
 

@@ -21,7 +21,7 @@ async def test_generation_planner_empty_history():
 
     planner = GenerationPlanner(db=MockDB())
 
-    req = GenerateRequest(subject="Mathematics", class_level="10", total_questions=5)
+    req = GenerateRequest(subject="Mathematics", class_level="10", total_questions=5, document_ids=["doc1"])
 
     plan = await planner.build_plan(req)
 
