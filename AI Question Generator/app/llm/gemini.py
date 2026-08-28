@@ -28,6 +28,7 @@ async def generate_structured[T](
         max_output_tokens=4096,
         response_mime_type="application/json",
         response_schema=response_schema.model_json_schema(),
+        automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
     )
 
     last_err = None
