@@ -1,111 +1,142 @@
-# AI Evaluation Engine V1
+# AI Question Evaluator
 
-Backend-only, text-input educational evaluation engine.
+## Project Overview
+The AI Question Evaluator is a backend-only educational evaluation engine. It processes student answers in text format, compares them against a provided question and rubric, and outputs a structured evaluation result including score, error analysis, feedback, and identified concepts. It is designed for educational platforms needing automated grading for objective, numerical, and subjective questions across Mathematics, Science, English, and History (Std 1-12 and UG).
 
-## Locked V1 scope
+## Features
 
-- Text input only. No OCR, image, handwriting, voice or ASR implementation.
-- `StudentAnswer` is separated from evaluation so future input processors can normalize into the same representation.
-- Objective, numerical and subjective taxonomy implemented.
-- Std 1-12 and UG.
-- Mathematics, Science, English, History and General plugins.
-- Multiple evaluation strategies per domain/type.
-- Structured result with status, score, dimensions, concepts, error analysis, feedback and metadata.
+### Implemented
+- Text-based evaluation of student answers.
+- Exact match, numerical, and formula-based evaluation strategies (without LLMs).
+- LLM-based evaluation strategy for subjective answers (using Gemini).
+- Domain-specific plugins (Mathematics, Science, English, History, General).
+- Extraction of score, dimensions, concepts, error analysis, and feedback.
+
+### Not Implemented
+- Image, OCR, or handwriting input.
+- Voice/ASR input.
+- Complex algebraic equivalence checking (e.g. CAS solver).
+
+## Architecture
+The system is built as a FastAPI service using a strategy pattern for evaluation.
+
+```
+Request (Question + Answer)
+       |
+    FastAPI
+       |
+ Plugin Registry -> Selects Domain Plugin
+       |
+ Evaluation Strategy (Exact, Numerical, Formula, LLM)
+       |
+ Structured Evaluation Result
+       |
+    FastAPI
+```
+
+## Project Structure
+```
+app/
++-- api/          # FastAPI endpoints
++-- core/         # Settings and configuration
++-- models/       # Core domain models (Question, Answer, Result)
++-- plugins/      # Domain-specific logic (math, science, etc.)
++-- strategies/   # Evaluation algorithms (LLM, Exact Match, etc.)
++-- main.py       # FastAPI application entry point
+```
+
+## Technology Stack
+- **Backend:** Python, FastAPI, Pydantic v2
+- **AI:** Google GenAI SDK (Gemini)
+- **Tooling:** uv, Ruff, Mypy, Pytest
+
+## Prerequisites
+- **Python**: >=3.12
+- **Package Manager**: uv
+- **API Key**: Google Gemini API Key
 
 ## Dependencies
-
-This project relies on the following key dependencies:
-
-- **FastAPI**: High-performance web framework for the API.
-- **Uvicorn**: ASGI web server.
-- **Pydantic**: Data validation and strict structured models (v2).
-- **Google GenAI**: Client for the LLM evaluation strategy.
-- **Scalar FastAPI**: Beautiful interactive API documentation.
-- **Pytest**: For running the test suite.
-- **Ruff & Mypy**: For linting and static type checking.
+Dependencies are managed using uv (pyproject.toml and uv.lock).
+```bash
+uv sync
+```
 
 ## Configuration
-
-The application is configured using environment variables (via `pydantic-settings`). You can create a `.env` file in the root directory.
-
-Key environment variables:
-
-- `LLM_PROVIDER` (default: `"gemini"`): Set to `"gemini"` to enable real LLM evaluation via Google GenAI.
-- `LLM_MODEL` (default: `"gemini-2.5-flash"`): The model used for evaluations.
-- `GEMINI_API_KEY`: Your Gemini API key (required if using the Gemini provider).
-- `LLM_TIMEOUT` (default: `15`): Timeout in seconds for LLM API calls.
-
-## Setup & Installation
-
-This project uses `uv` for lightning-fast Python package management.
-Ensure you have Python 3.12+ and `uv` installed.
-
-1. Clone the repository and navigate into the root directory.
-2. Sync the dependencies and create the virtual environment:
-
-   ```bash
-   uv sync
-   ```
-
-3. (Optional) Create a `.env` file from the example if you intend to use live LLM features:
-
-   ```bash
-   cp .env.example .env
-   # Add your GEMINI_API_KEY in the .env file
-   ```
+Configure using `.env`.
+```env
+# Required for LLM evaluation
+GEMINI_API_KEY=your_gemini_api_key
+# The LLM provider (default: gemini)
+LLM_PROVIDER=gemini
+# The model used (default: gemini-2.5-flash)
+LLM_MODEL=gemini-2.5-flash
+# Timeout for LLM calls (default: 15)
+LLM_TIMEOUT=15
+```
 
 ## Run Instructions
-
-### Start the Development Server
-
 ```bash
 uv run uvicorn app.main:app --reload
 ```
 
-Once the server is running, you can access the beautiful Scalar API documentation at:
+## API Documentation
+Once running, view the interactive Scalar API documentation at `http://127.0.0.1:8000/scalar` (or standard Swagger at `/docs`).
 
-- **API Reference**: [http://127.0.0.1:8000/scalar](http://127.0.0.1:8000/scalar)
-- **Standard Swagger UI**: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+### Important Endpoints
+- POST `/api/v1/evaluate`
+  - **Purpose**: Evaluates a student answer.
+  - **Request Body**: `EvaluationRequest` (Question, StudentAnswer, Context)
+  - **Response**: `EvaluationResult` (Score, feedback, error analysis)
 
-### Run Tests
+## Example Usage
+**Input**:
+```json
+{
+  "question": {"text": "What is the capital of France?", "type": "subjective", "domain": "general"},
+  "answer": {"text": "I think it is Paris."}
+}
+```
+**Output**:
+```json
+{
+  "status": "success",
+  "score": 1.0,
+  "feedback": "Correct! Paris is the capital of France.",
+  "concepts": ["Geography", "Capitals"]
+}
+```
 
+## AI / Model Configuration
+Uses `gemini-2.5-flash` via Google GenAI for its fast inference speed and cost-effectiveness. Structured output is enforced using Pydantic schemas passed to the SDK.
+
+## Testing
+Tests cover unit, integration, and mocked LLM components.
 ```bash
 uv run pytest
 ```
 
-### Run Linting & Type Checking
-
+## Code Quality
 ```bash
 uv run ruff check app
 uv run ruff format app
 uv run mypy app
 ```
 
-### Production Deployment
+## Error Handling
+- Validates input strictly via Pydantic.
+- LLM timeouts are handled gracefully, returning evaluation failure status without crashing the server.
 
-For production, the application is ready to be containerized using the included `Dockerfile`:
+## Data Storage
+- **Stored**: Nothing is persisted. This is a stateless processing engine.
+- **Not Stored**: Evaluation requests and results are not saved to any database.
 
-```bash
-docker build -t ai-evaluation-engine .
-docker run -p 8000:8000 --env-file .env ai-evaluation-engine
-```
+## Known Limitations
+- Strictly limited to text input. No OCR or diagram parsing.
+- Formula equivalence relies on basic string replacement rather than a Computer Algebra System.
+- Basic unit parsing relies on simple token splitting.
 
-## AI Model Selection
+## Suggested Future Improvements
+- Integrate SymPy for true mathematical formula equivalence checking.
+- Hook into OCR/Vision models for handwritten diagram support.
+- Refactor LLM calls to use asynchronous clients for higher throughput.
 
-The engine uses **Google GenAI (Gemini 2.5 Flash)** as its primary LLM evaluator (via `LLMStrategy`).
-
-- **Why Gemini 2.5 Flash?**: It was selected for its blazing-fast inference speed, cost-effectiveness, and large context window. Educational evaluations require near real-time feedback (especially for subjective essay grading), and Gemini 2.5 Flash provides the perfect balance between high-reasoning capability (needed for step-by-step logic, concept extraction, and misconception identification) and extremely low latency compared to heavier reasoning models.
-
-## Known Limitations & Future Improvements
-
-**Known Limitations:**
-
-- **Text-Only Input**: V1 is strictly restricted to text inputs. It currently lacks OCR pipelines for handwritten assignments, image parsing for geometry/diagrams, and ASR for voice inputs.
-- **Basic Unit Parsing**: The `UnitBasedStrategy` currently uses simplistic token-splitting to isolate numbers from unit strings. It may struggle with highly complex, non-standard compound units without advanced regex normalization.
-- **Rigid Formula Normalization**: Algebraic formula equivalence relies on basic string replacement (e.g. replacing `²` with `^2`) rather than a full Computer Algebra System (CAS).
-
-**Suggested Future Improvements:**
-
-- **SymPy Integration**: Implement a true mathematical solver in the `FormulaStrategy` to correctly assert that algebraically equivalent expressions (e.g., `x(y+z)` and `xy+xz`) match.
-- **OCR Pre-processing**: Hook the `StudentAnswer` ingestion pipeline to a vision model (like Gemini 2.5 Pro Vision) or OCR service to support handwritten test papers and diagrams.
-- **Async LLM Calls**: Shifting the `LLMStrategy` to use an asynchronous GenAI client (`await evaluator.evaluate_answer(...)`) would drastically improve server throughput and concurrency.

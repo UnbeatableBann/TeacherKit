@@ -1,39 +1,33 @@
 # TeacherKit Monorepo
 
-Welcome to the **TeacherKit** monorepo! This repository contains a suite of AI-powered applications designed to streamline educational content creation, student evaluation, and administrative workflows. 
+## Repository Overview
+This repository contains a suite of independent, AI-powered applications designed for educational content creation, student evaluation, and administrative workflows. 
 
 Each project operates as its own independent service and contains its own respective configuration, databases, and dependencies.
 
 ## Projects
 
 ### 1. [AI Question Generator](./AI%20Question%20Generator/)
-A production-ready platform that analyzes previous-year examination papers (via PDF) and generates **brand new**, structurally equivalent questions.
-- **Backend Engine**: FastAPI, Pydantic v2.
-- **AI Core**: Google Gemini 2.5 Pro for structural extraction, deep taxonomy analysis, and RAG-infused question generation.
-- **Database**: PostgreSQL with `pgvector` for semantic similarity mapping and avoiding duplicate generation.
-- **Workflow**: Documents → Extraction → Concept Analysis → Deterministic Generation Planner → Semantic Context Retrieval → LLM Generation → Scheme Validation.
+A backend system that analyzes previous-year examination papers (PDFs), extracts their structure and concepts, and generates new questions that match the historical difficulty and topic distribution.
+- **Technologies**: Python, FastAPI, PostgreSQL, pgvector, Google Gemini.
+- **Status**: Backend API implemented. Requires PostgreSQL with pgvector.
 
 ### 2. [AI Sales Assistant](./AI%20Sales%20Assistant/)
-A full-stack intelligent agent and dashboard tailored to automate engagement, catalogue lookups, and administrative responses.
-- **Backend Engine**: FastAPI, PostgreSQL, and Google Gemini SDK.
-- **Frontend Dashboard**: React + Vite (TypeScript).
-- **Features**: Agentic workflow for lead scoring, conversational requirement extraction, intent recognition, RAG against CSV catalogues, objection handling, and automatic escalation bounding.
+A full-stack copilot system for sales representatives. It processes customer conversations, retrieves product recommendations from an uploaded Knowledge Base (RAG), and generates drafted follow-up messages.
+- **Technologies**: Python, FastAPI, React, Node.js, PostgreSQL, pgvector, Google Gemini.
+- **Status**: Full-stack application implemented. Requires PostgreSQL with pgvector.
 
 ### 3. [AI Question Evaluator](./AI%20Question%20Evaluator/)
-*(Documentation coming soon)* - A component designed to algorithmically and semantically evaluate the quality, difficulty, and validity of educational questions.
+A stateless backend evaluation engine that grades student text answers against rubrics using Exact Match, Numerical, and LLM-based strategies across multiple educational domains.
+- **Technologies**: Python, FastAPI, Google Gemini.
+- **Status**: Backend API implemented. No database required.
 
----
+## High-Level Setup
+To run the projects in this repository, you generally need:
+- **Python >=3.12** (managed via `uv`)
+- **Node.js 20+** (for frontend applications)
+- **PostgreSQL** (with `pgvector` extension for the Database-backed apps)
+- **Google Gemini API Key**
 
-## Global Setup
+Each project is independent. Please navigate to the specific project directory and read its `README.md` for detailed instructions on dependencies, environment variables, database migrations, and run commands.
 
-Ensure you have the following installed locally on your system to work with this monorepo effectively:
-
-1. **Python 3.12+**
-2. **Node.js 20+** (for frontend applications)
-3. **[uv](https://github.com/astral-sh/uv)** (Python package & environment manager)
-4. **PostgreSQL** (with the `pgvector` extension installed)
-
-## Environment Configuration
-Each individual project folder contains its own `.env.example` file. To run a project locally, duplicate the `.env.example` to `.env` inside its respective folder and populate it with your local database credentials and your **Google Gemini API Key**.
-
-*(For detailed setup and execution instructions, please refer to the `README.md` located inside each specific project folder).*

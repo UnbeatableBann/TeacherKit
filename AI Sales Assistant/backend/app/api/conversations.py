@@ -1,3 +1,7 @@
+# from app.orchestrator import run_orchestrator
+# from app.plugins.follow_up_generator import generate_follow_up
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import select
@@ -10,10 +14,6 @@ from app.schemas.domain import (
     OrchestratorResponse,
 )
 
-# from app.orchestrator import run_orchestrator
-# from app.plugins.follow_up_generator import generate_follow_up
-
-import logging
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
