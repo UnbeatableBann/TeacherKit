@@ -32,34 +32,41 @@ class RequirementSchema(BaseModel):
     budget_max: Optional[float] = None
     preferences: List[str] = Field(default_factory=list)
     urgency: Optional[str] = None
+    model_config = {"from_attributes": True}
 
 class ObjectionSchema(BaseModel):
     type: str
     text: str
     status: str
+    model_config = {"from_attributes": True}
 
 class RecommendationSchema(BaseModel):
     id: str = ""
     name: str
     reasoning: str
     sources: List[Dict[str, Any]] = Field(default_factory=list)
+    model_config = {"from_attributes": True}
 
 class AnsweredQuestionSchema(BaseModel):
     question: str
     answer: str
     source_product_ids: List[str]
+    model_config = {"from_attributes": True}
 
 class LeadScoreSchema(BaseModel):
     score: int
     breakdown: Dict[str, Any]
+    model_config = {"from_attributes": True}
 
 class NextBestActionSchema(BaseModel):
     action: str
     reason: str
+    model_config = {"from_attributes": True}
 
 class EscalationSchema(BaseModel):
     triggered: bool
     reason: Optional[str] = None
+    model_config = {"from_attributes": True}
 
 class OrchestratorResponse(BaseModel):
     intent: Optional[str] = None
@@ -72,6 +79,7 @@ class OrchestratorResponse(BaseModel):
     next_best_action: NextBestActionSchema
     conversation_summary: Optional[str] = None
     escalation: EscalationSchema
+    model_config = {"from_attributes": True}
 
 class FollowUpRequest(BaseModel):
     conversation_id: str
@@ -82,6 +90,7 @@ class ConversationStateResponse(BaseModel):
     summary: Optional[str] = None
     lead_score: Optional[LeadScoreSchema] = None
     recommendations_shown: List[RecommendationSchema] = Field(default_factory=list)
+    model_config = {"from_attributes": True}
 
 from datetime import datetime
 

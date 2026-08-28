@@ -14,6 +14,47 @@ from app.schemas.domain import (
 
 router = APIRouter()
 
+from pydantic import BaseModel
+
+class CreateConversationRequest(BaseModel):
+    customer_name: str
+    channel: str = "web"
+
+@router.post("")
+async def create_conversation(
+    payload: CreateConversationRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    from app.models.domain import Conversation, Customer, LeadScore
+    
+    # Normally we'd look up customer or tenant info from auth
+    # Create dummy customer
+    customer = Customer(
+        tenant_id="default_tenant",
+        name=payload.customer_name,
+        contact_info="unknown@example.com"
+    )
+    db.add(customer)
+    await db.flush()
+    
+    conv = Conversation(
+        customer_id=customer.id,
+        channel=payload.channel,
+        status="active"
+    )
+    db.add(conv)
+    await db.flush()
+
+    lead_score = LeadScore(
+        conversation_id=conv.id,
+        score=50,
+        breakdown={"reason": "New conversation created"}
+    )
+    db.add(lead_score)
+    await db.commit()
+    
+    return {"conversation_id": conv.id}
+
 @router.post("/{conversation_id}/messages", response_model=OrchestratorResponse)
 async def process_message(
     conversation_id: str, 
@@ -54,7 +95,7 @@ async def get_conversation(
         "id": conv.id,
         "requirements": req or {"features_wanted": [], "preferences": []},
         "summary": "Summary text", # From state
-        "lead_score": lead or {"total": 0, "breakdown": {}},
+        "lead_score": lead or {"score": 0, "breakdown": {}},
         "recommendations_shown": recs
     }
 
