@@ -24,7 +24,9 @@ async def generate_structured[T: BaseModel](
     Generate a structured response matching the Pydantic schema using Gemini.
     """
     model_name = model or settings.LLM_MODEL
-    retries = max_retries if max_retries is not None else settings.MAX_GENERATION_ATTEMPTS
+    retries = (
+        max_retries if max_retries is not None else settings.MAX_GENERATION_ATTEMPTS
+    )
 
     config = types.GenerateContentConfig(
         system_instruction=system_prompt,
@@ -57,6 +59,8 @@ async def generate_structured[T: BaseModel](
 
 import asyncio
 
+import httpx
+
 
 async def get_embeddings_batch(texts: list[str]) -> list[list[float]]:
     """
@@ -66,45 +70,66 @@ async def get_embeddings_batch(texts: list[str]) -> list[list[float]]:
     model_name = settings.EMBEDDING_MODEL
     max_retries = settings.EMBEDDING_RETRY_COUNT
     chunk_size = settings.EMBEDDING_BATCH_SIZE
-    
+
     all_embeddings: list[list[float]] = []
-    
-    for i in range(0, len(texts), chunk_size):
-        chunk = texts[i:i + chunk_size]
-        last_err = None
-        
-        for attempt in range(max_retries):
-            try:
-                response = await client.aio.models.embed_content(
-                    model=model_name, contents=chunk
+
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:batchEmbedContents?key={settings.GEMINI_API_KEY}"
+
+    async with httpx.AsyncClient() as http_client:
+        for i in range(0, len(texts), chunk_size):
+            chunk = texts[i : i + chunk_size]
+            last_err = None
+
+            requests = []
+            for text in chunk:
+                requests.append(
+                    {
+                        "model": f"models/{model_name}",
+                        "content": {"parts": [{"text": text}]},
+                        "outputDimensionality": settings.EMBEDDING_DIMENSIONS,
+                    }
                 )
-                if not response.embeddings:
-                    raise RuntimeError("No embeddings returned by API")
-                
-                chunk_embeddings = [emb.values or [] for emb in response.embeddings]
-                
-                # Validate dimensions
-                for emb in chunk_embeddings:
-                    if len(emb) != settings.EMBEDDING_DIMENSIONS:
-                        raise ValueError(f"EMBEDDING_DIMENSION_MISMATCH: expected {settings.EMBEDDING_DIMENSIONS}, got {len(emb)}")
-                
-                all_embeddings.extend(chunk_embeddings)
-                break  # Success, proceed to next chunk
-                
-            except ValueError as e:
-                # Permanent failure if dimension mismatch
-                logger.error(str(e))
-                raise
-            except (RuntimeError, APIError) as e:
-                logger.warning(f"Embedding attempt {attempt + 1} failed for chunk {i}: {e}")
-                last_err = e
-                if attempt == max_retries - 1:
-                    raise RuntimeError(
-                        f"Failed to generate embeddings after {max_retries} attempts. Last error: {last_err}"
+
+            for attempt in range(max_retries):
+                try:
+                    response = await http_client.post(url, json={"requests": requests})
+                    response.raise_for_status()
+                    data = response.json()
+
+                    if "embeddings" not in data:
+                        raise RuntimeError("No embeddings returned by API")
+
+                    chunk_embeddings = [
+                        emb.get("values", []) for emb in data["embeddings"]
+                    ]
+
+                    # Validate dimensions
+                    for emb in chunk_embeddings:
+                        if len(emb) != settings.EMBEDDING_DIMENSIONS:
+                            raise ValueError(
+                                f"EMBEDDING_DIMENSION_MISMATCH: expected {settings.EMBEDDING_DIMENSIONS}, got {len(emb)}"
+                            )
+
+                    all_embeddings.extend(chunk_embeddings)
+                    break  # Success, proceed to next chunk
+
+                except ValueError as e:
+                    # Permanent failure if dimension mismatch
+                    logger.error(str(e))
+                    raise
+                except (RuntimeError, httpx.HTTPError) as e:
+                    logger.warning(
+                        f"Embedding attempt {attempt + 1} failed for chunk {i}: {e}"
                     )
-                await asyncio.sleep(2 ** attempt)  # Exponential backoff
+                    last_err = e
+                    if attempt == max_retries - 1:
+                        raise RuntimeError(
+                            f"Failed to generate embeddings after {max_retries} attempts. Last error: {last_err}"
+                        )
+                    await asyncio.sleep(2**attempt)  # Exponential backoff
 
     return all_embeddings
+
 
 async def get_embedding(text: str) -> list[float]:
     """

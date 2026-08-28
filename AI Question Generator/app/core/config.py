@@ -17,8 +17,8 @@ class Settings(BaseSettings):
     LLM_PROVIDER: str = "gemini"
     LLM_MODEL: str = "gemini-2.5-pro"
     
-    EMBEDDING_MODEL: str = "text-embedding-004"
-    EMBEDDING_DIMENSIONS: int = 3072
+    EMBEDDING_MODEL: str = "gemini-embedding-2"
+    EMBEDDING_DIMENSIONS: int = 768
     EMBEDDING_BATCH_SIZE: int = 100
     EMBEDDING_RETRY_COUNT: int = 3
 
