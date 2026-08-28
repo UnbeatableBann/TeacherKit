@@ -21,8 +21,10 @@ async def process_message(
     db: AsyncSession = Depends(get_db)
 ):
     from app.orchestrator import run_orchestrator
-    # Pass off to the orchestrator
-    result = await run_orchestrator(conversation_id, payload, db)
+    try:
+        result = await run_orchestrator(conversation_id, payload, db)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     return result
 
 @router.get("/{conversation_id}", response_model=ConversationStateResponse)
@@ -61,11 +63,18 @@ async def generate_followup(
     conversation_id: str,
     db: AsyncSession = Depends(get_db)
 ):
-    from app.orchestrator import load_session_state
-    from app.plugins.generation.follow_up_generator import FollowUpGeneratorPlugin
+    from app.models.domain import FollowUp
     
-    state = await load_session_state(conversation_id, db)
-    plugin = FollowUpGeneratorPlugin()
-    draft = await plugin.run(state, db)
+    # Fetch the latest draft for this conversation
+    stmt = select(FollowUp).where(
+        FollowUp.conversation_id == conversation_id,
+        FollowUp.sent_status == "draft"
+    ).order_by(FollowUp.id.desc())
     
-    return {"draft_text": draft}
+    result = await db.execute(stmt)
+    draft = result.scalar_one_or_none()
+    
+    if draft:
+        return {"draft_text": draft.draft_text}
+    else:
+        return {"draft_text": "No follow-up draft is available yet."}

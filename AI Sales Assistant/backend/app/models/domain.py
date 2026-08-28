@@ -112,9 +112,10 @@ class Recommendation(Base):
     __tablename__ = "recommendations"
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     conversation_id: Mapped[str] = mapped_column(String, ForeignKey("conversations.id"))
-    product_id: Mapped[str] = mapped_column(String)  # No longer a foreign key to products
+    name: Mapped[str] = mapped_column(String, default="")
     reasoning: Mapped[str] = mapped_column(Text)
-    confidence: Mapped[float] = mapped_column(Float)
+    sources: Mapped[list] = mapped_column(JSONB, default=list)
+    confidence: Mapped[float] = mapped_column(Float, default=1.0)
     shown_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     was_validated: Mapped[bool] = mapped_column(Boolean, default=False)
 

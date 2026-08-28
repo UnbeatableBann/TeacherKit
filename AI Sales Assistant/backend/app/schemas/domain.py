@@ -21,12 +21,10 @@ class ObjectionSchema(BaseModel):
     status: str
 
 class RecommendationSchema(BaseModel):
-    product_id: str
+    id: str = ""
     name: str
-    price: float
-    matched_features: List[str]
     reasoning: str
-    confidence: float
+    sources: List[Dict[str, Any]] = Field(default_factory=list)
 
 class AnsweredQuestionSchema(BaseModel):
     question: str
