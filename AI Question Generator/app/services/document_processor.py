@@ -48,7 +48,10 @@ async def process_document_background(document_id: str, content: bytes, filename
                 
                 chunk_extracted = await extractor.extract_from_text(chunk_text)
                 if chunk_extracted:
-                    chunk_analyses = await analyzer.analyze_batch(chunk_extracted, "Unknown", "Unknown")
+                    # Pass the document subject and class if available, else omit them to let the analyzer infer
+                    subj = doc.subject if doc.subject else "General Subject"
+                    lvl = doc.class_level if doc.class_level else "General Class"
+                    chunk_analyses = await analyzer.analyze_batch(chunk_extracted, subj, lvl)
                     extracted_questions.extend(chunk_extracted)
                     analyses.extend(chunk_analyses)
 
@@ -57,10 +60,14 @@ async def process_document_background(document_id: str, content: bytes, filename
                 texts_to_embed = [eq.question_text for eq in extracted_questions]
                 embeddings = await get_embeddings_batch(texts_to_embed)
                 
+                # Explicitly validate equal lengths
+                if len(extracted_questions) != len(analyses) or len(extracted_questions) != len(embeddings):
+                    raise RuntimeError(f"Length mismatch: questions={len(extracted_questions)}, analyses={len(analyses)}, embeddings={len(embeddings)}")
+                
                 for eq, analysis, emb in zip(extracted_questions, analyses, embeddings):
                     db_question = Question(
                         document_id=doc.id,
-                        source_page=1,
+                        source_page=eq.source_page,
                         question_text=eq.question_text,
                         marks=eq.marks,
                         options=eq.options,

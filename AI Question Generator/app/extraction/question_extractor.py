@@ -19,7 +19,7 @@ class QuestionExtractor:
         system_prompt = (
             "You are an expert examination parser. Your task is to extract individual questions "
             "from the provided raw examination text. Preserve the original question text, options (if MCQ), "
-            "marks, and question type accurately."
+            "marks, question type accurately, and explicitly include the source_page integer based on the '--- Page X ---' markers in the text."
         )
 
         prompt = f"Extract all questions from the following text:\n\n{text}"

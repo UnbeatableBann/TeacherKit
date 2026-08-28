@@ -30,6 +30,7 @@ class MarkingSchemeItem(BaseModel):
 
 class ExtractedQuestionSchema(BaseModel):
     question_text: str
+    source_page: int | None = None
     source_question_number: str | None = None
     section: str | None = None
     marks: float | None = None
