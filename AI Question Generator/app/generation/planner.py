@@ -3,7 +3,7 @@ from collections import defaultdict
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.domain import Question
+from app.models.domain import DifficultyLevel, Question, QuestionType
 from app.schemas.domain import GenerateRequest, GenerationPlanSchema, QuestionPlanSchema
 
 
@@ -30,13 +30,13 @@ class GenerationPlanner:
 
         for q in questions:
             if q.topic:
-                topic_counts[q.topic] += 1  # type: ignore
+                topic_counts[q.topic] += 1
             if q.difficulty:
-                difficulty_counts[q.difficulty] += 1  # type: ignore
+                difficulty_counts[q.difficulty] += 1
             if q.question_type:
-                type_counts[q.question_type] += 1  # type: ignore
+                type_counts[q.question_type] += 1
             if q.marks:
-                marks_counts[q.marks] += 1  # type: ignore
+                marks_counts[q.marks] += 1
 
         planned_questions: list[QuestionPlanSchema] = []
         for i in range(request.total_questions):
@@ -44,30 +44,40 @@ class GenerationPlanner:
             topic = request.requested_topic
             if not topic:
                 topic = (
-                    max(topic_counts, key=topic_counts.get)  # type: ignore
+                    max(topic_counts, key=lambda k: topic_counts[k])
                     if topic_counts
                     else "General"
                 )
 
             difficulty = request.requested_difficulty
             if not difficulty:
-                difficulty = (
-                    max(difficulty_counts, key=difficulty_counts.get)  # type: ignore
+                diff_str = (
+                    max(difficulty_counts, key=lambda k: difficulty_counts[k])
                     if difficulty_counts
                     else "Medium"
                 )
+                # Cast the string to DifficultyLevel if it matches, otherwise use Medium
+                try:
+                    difficulty = DifficultyLevel(diff_str)
+                except ValueError:
+                    difficulty = DifficultyLevel.MEDIUM
 
-            q_type = (
-                max(type_counts, key=type_counts.get) if type_counts else "Short Answer"  # type: ignore
+            q_type_str = (
+                max(type_counts, key=lambda k: type_counts[k]) if type_counts else "Short Answer"
             )
-            marks = max(marks_counts, key=marks_counts.get) if marks_counts else 2.0  # type: ignore
+            try:
+                q_type = QuestionType(q_type_str)
+            except ValueError:
+                q_type = QuestionType.SHORT_ANSWER
+
+            marks = max(marks_counts, key=lambda k: marks_counts[k]) if marks_counts else 2.0
 
             planned_questions.append(
                 QuestionPlanSchema(
-                    topic=topic,  # type: ignore
-                    difficulty=difficulty,  # type: ignore
-                    marks=marks,  # type: ignore
-                    question_type=q_type,  # type: ignore
+                    topic=topic,
+                    difficulty=difficulty,
+                    marks=marks,
+                    question_type=q_type,
                 )
             )
 

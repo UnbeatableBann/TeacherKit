@@ -3,6 +3,8 @@ import logging
 
 from google import genai
 from google.genai import types
+from google.genai.errors import APIError
+from pydantic import BaseModel
 
 from app.core.config import settings
 
@@ -11,7 +13,7 @@ logger = logging.getLogger(__name__)
 client = genai.Client(api_key=settings.GEMINI_API_KEY)
 
 
-async def generate_structured[T](
+async def generate_structured[T: BaseModel](
     prompt: str,
     response_schema: type[T],
     system_prompt: str = "",
@@ -26,7 +28,7 @@ async def generate_structured[T](
     config = types.GenerateContentConfig(
         system_instruction=system_prompt,
         response_mime_type="application/json",
-        response_schema=response_schema.model_json_schema(),  # type: ignore
+        response_schema=response_schema.model_json_schema(),
         automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
     )
 
@@ -36,14 +38,14 @@ async def generate_structured[T](
             response = await client.aio.models.generate_content(
                 model=model_name, contents=prompt, config=config
             )
-            text = response.text.strip()  # type: ignore
+            text = (response.text or "").strip()
             # Clean up markdown block if present
             text = text.removeprefix("```json")
             text = text.removesuffix("```")
 
             data = json.loads(text.strip())
             return response_schema(**data)
-        except Exception as e:  # noqa: BLE001
+        except (ValueError, RuntimeError, json.JSONDecodeError, APIError) as e:
             logger.warning(f"Generation attempt {attempt + 1} failed: {e}")
             last_err = e
 
@@ -78,21 +80,21 @@ async def get_embeddings_batch(texts: list[str]) -> list[list[float]]:
                 if not response.embeddings:
                     raise RuntimeError("No embeddings returned by API")
                 
-                chunk_embeddings = [emb.values for emb in response.embeddings]  # type: ignore
+                chunk_embeddings = [emb.values or [] for emb in response.embeddings]
                 
                 # Validate dimensions
                 for emb in chunk_embeddings:
-                    if len(emb) != settings.EMBEDDING_DIMENSIONS:  # type: ignore
-                        raise ValueError(f"EMBEDDING_DIMENSION_MISMATCH: expected {settings.EMBEDDING_DIMENSIONS}, got {len(emb)}")  # type: ignore
+                    if len(emb) != settings.EMBEDDING_DIMENSIONS:
+                        raise ValueError(f"EMBEDDING_DIMENSION_MISMATCH: expected {settings.EMBEDDING_DIMENSIONS}, got {len(emb)}")
                 
-                all_embeddings.extend(chunk_embeddings)  # type: ignore
+                all_embeddings.extend(chunk_embeddings)
                 break  # Success, proceed to next chunk
                 
             except ValueError as e:
                 # Permanent failure if dimension mismatch
                 logger.error(str(e))
                 raise
-            except Exception as e:  # noqa: BLE001
+            except (RuntimeError, APIError) as e:
                 logger.warning(f"Embedding attempt {attempt + 1} failed for chunk {i}: {e}")
                 last_err = e
                 if attempt == max_retries - 1:

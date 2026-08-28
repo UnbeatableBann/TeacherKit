@@ -1,5 +1,7 @@
 import logging
 
+from sqlalchemy.exc import SQLAlchemyError
+
 from app.analysis.question_analyzer import QuestionAnalyzer
 from app.core.database import db_manager
 from app.extraction.question_extractor import QuestionExtractor
@@ -88,5 +90,6 @@ async def process_document_background(document_id: str, content: bytes, filename
                     doc.status = "failed"
                     doc.metadata_ = {"error": str(e)}
                     await db.commit()
-            except Exception as inner_e:  # noqa: BLE001
+            except SQLAlchemyError as inner_e:
                 logger.error(f"Failed to update document status to failed: {inner_e}")
+            raise

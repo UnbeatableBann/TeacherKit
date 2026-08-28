@@ -34,7 +34,7 @@ class GenerationOrchestrator:
         await self.db.flush()
 
         plan = await self.planner.build_plan(request)
-        db_request.plan_snapshot = plan.model_dump()  # type: ignore
+        db_request.plan_snapshot = plan.model_dump()
         await self.db.flush()
 
         # Batch generate all questions at once to prevent 429 Too Many Requests
@@ -42,11 +42,11 @@ class GenerationOrchestrator:
             batch_generated = await self.generator.generate_batch_questions(
                 plan.questions, request.subject, request.class_level, request.document_ids
             )
-        except Exception as e:  # noqa: BLE001
-            db_request.status = "failed"  # type: ignore
+        except RuntimeError as e:
+            db_request.status = "failed"
             await self.db.commit()
             # Handle failure to generate entirely
-            raise RuntimeError(f"Failed to generate questions: {e}")
+            raise RuntimeError(f"Failed to generate questions: {e}") from e
 
         generated_questions = []
         for generated, q_plan in zip(batch_generated, plan.questions):
@@ -67,20 +67,20 @@ class GenerationOrchestrator:
 
             if is_valid:
                 generated.validation_status = "passed"
-                db_q.validation_status = "passed"  # type: ignore
+                db_q.validation_status = "passed"
             else:
                 generated.validation_status = f"failed: {reason}"
-                db_q.validation_status = "failed"  # type: ignore
-                db_q.validation_errors = {"reason": reason}  # type: ignore
+                db_q.validation_status = "failed"
+                db_q.validation_errors = {"reason": reason}
             
             self.db.add(db_q)
             generated_questions.append(generated)
 
-        db_request.status = "completed"  # type: ignore
+        db_request.status = "completed"
         await self.db.commit()
 
         return GenerationResponse(
-            generation_id=db_request.id,  # type: ignore
+            generation_id=db_request.id,
             status="completed",
             subject=request.subject,
             class_level=request.class_level,

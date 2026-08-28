@@ -1,26 +1,29 @@
 from abc import ABC, abstractmethod
-from typing import List, Dict, Any
-from sqlalchemy.ext.asyncio import AsyncSession
-from app.models.domain import Question
+from typing import Any
+
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.domain import Question
+
 
 class VectorStore(ABC):
     @abstractmethod
-    async def add_documents(self, documents: List[Dict[str, Any]]):
+    async def add_documents(self, documents: list[dict[str, Any]]):
         pass
 
     @abstractmethod
-    async def search(self, query_embedding: List[float], document_ids: List[str], topic: str, difficulty: str, limit: int = 3) -> List[Dict[str, Any]]:
+    async def search(self, query_embedding: list[float], document_ids: list[str], topic: str, difficulty: str, limit: int = 3) -> list[dict[str, Any]]:
         pass
 
 class PGVectorStore(VectorStore):
     def __init__(self, db: AsyncSession):
         self.db = db
         
-    async def add_documents(self, documents: List[Dict[str, Any]]):
+    async def add_documents(self, documents: list[dict[str, Any]]):
         pass # Implemented in DocumentProcessor directly for now, or we can move it here.
 
-    async def search(self, query_embedding: List[float], document_ids: List[str], topic: str, difficulty: str, limit: int = 3) -> List[Dict[str, Any]]:
+    async def search(self, query_embedding: list[float], document_ids: list[str], topic: str, difficulty: str, limit: int = 3) -> list[dict[str, Any]]:
         stmt = (
             select(Question)
             .where(Question.document_id.in_(document_ids))

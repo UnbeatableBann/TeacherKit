@@ -1,12 +1,11 @@
+
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.llm.gemini import generate_structured
 from app.retrieval.rag import RAGService
 from app.schemas.domain import GeneratedQuestionResponse, QuestionPlanSchema
 
-
-from typing import List
-from pydantic import BaseModel
 
 class BatchGenerationResponse(BaseModel):
     questions: list[GeneratedQuestionResponse]
