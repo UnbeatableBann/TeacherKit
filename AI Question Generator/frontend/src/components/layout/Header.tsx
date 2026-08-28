@@ -58,33 +58,7 @@ export function Header() {
                 </div>
               ) : (
                 history.map((item, i) => (
-                  <div key={i} className="border border-gray-100 rounded-lg p-4 space-y-3 bg-white hover:shadow-sm transition-shadow">
-                    <div className="flex justify-between items-start text-sm">
-                      <div className="text-gray-500">
-                        {new Date(item.timestamp).toLocaleString()}
-                      </div>
-                      <div className="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded text-xs font-medium">
-                        {item.response.generated_count} Questions
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-2 text-sm bg-gray-50 p-3 rounded-md">
-                      <div><span className="text-gray-500">Subject:</span> {item.request.subject}</div>
-                      <div><span className="text-gray-500">Class:</span> {item.request.class_level}</div>
-                      <div><span className="text-gray-500">Topic:</span> {item.request.requested_topic || 'Any'}</div>
-                      <div><span className="text-gray-500">Difficulty:</span> {item.request.requested_difficulty || 'Any'}</div>
-                    </div>
-
-                    <div className="space-y-1">
-                      <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">Source Documents</div>
-                      {item.documents?.map((doc: any) => (
-                        <div key={doc.document_id} className="flex items-center gap-1.5 text-sm text-gray-700">
-                          <FileText className="w-3.5 h-3.5 text-blue-500" />
-                          <span className="truncate">{doc.filename}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                  <HistoryItemCard key={i} item={item} />
                 ))
               )}
             </div>
@@ -92,5 +66,54 @@ export function Header() {
         </div>
       )}
     </>
+  );
+}
+
+import { QuestionList } from "../generator/QuestionList";
+import { ChevronDown, ChevronUp } from "lucide-react";
+
+function HistoryItemCard({ item }: { item: any }) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className="border border-gray-100 rounded-lg space-y-3 bg-white hover:shadow-sm transition-shadow overflow-hidden">
+      <div className="p-4 cursor-pointer" onClick={() => setExpanded(!expanded)}>
+        <div className="flex justify-between items-start text-sm mb-3">
+          <div className="text-gray-500 font-medium flex items-center gap-2">
+            <Clock className="w-4 h-4 text-gray-400" />
+            {new Date(item.timestamp).toLocaleString()}
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded text-xs font-medium">
+              {item.response.generated_count} Questions
+            </div>
+            {expanded ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-2 text-sm bg-gray-50 p-3 rounded-md mb-3">
+          <div><span className="text-gray-500">Subject:</span> {item.request.subject}</div>
+          <div><span className="text-gray-500">Class:</span> {item.request.class_level}</div>
+          <div><span className="text-gray-500">Topic:</span> {item.request.requested_topic || 'Any'}</div>
+          <div><span className="text-gray-500">Difficulty:</span> {item.request.requested_difficulty || 'Any'}</div>
+        </div>
+
+        <div className="space-y-1">
+          <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">Source Documents</div>
+          {item.documents?.map((doc: any) => (
+            <div key={doc.document_id} className="flex items-center gap-1.5 text-sm text-gray-700">
+              <FileText className="w-3.5 h-3.5 text-blue-500" />
+              <span className="truncate">{doc.filename}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      
+      {expanded && (
+        <div className="border-t border-gray-100 bg-gray-50/50 p-4 animate-in slide-in-from-top-2">
+          <QuestionList response={item.response} />
+        </div>
+      )}
+    </div>
   );
 }
