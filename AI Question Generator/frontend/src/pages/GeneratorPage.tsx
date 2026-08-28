@@ -86,6 +86,17 @@ export function GeneratorPage() {
     try {
       const response = await generateQuestions(request);
       setResult(response);
+      
+      // Save to history in localStorage
+      const historyItem = {
+        timestamp: new Date().toISOString(),
+        request,
+        response,
+        documents: documents.filter(d => request.document_ids.includes(d.document_id))
+      };
+      const existingHistory = JSON.parse(localStorage.getItem('generation_history') || '[]');
+      localStorage.setItem('generation_history', JSON.stringify([historyItem, ...existingHistory]));
+
     } catch (err) {
       setGlobalError(err instanceof Error ? err.message : "Failed to generate questions");
     } finally {
