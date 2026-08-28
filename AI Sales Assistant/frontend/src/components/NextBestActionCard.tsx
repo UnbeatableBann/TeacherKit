@@ -1,4 +1,4 @@
-import type { NextBestActionSchema } from '../types';
+﻿import type { NextBestActionSchema } from '../types';
 import { Lightbulb } from 'lucide-react';
 
 export default function NextBestActionCard({ action }: { action: NextBestActionSchema }) {
@@ -17,3 +17,5 @@ export default function NextBestActionCard({ action }: { action: NextBestActionS
     </div>
   );
 }
+
+

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useGenerateFollowUp } from '../api/hooks';
 import { X, Send } from 'lucide-react';
 
@@ -27,7 +27,7 @@ export default function FollowUpEditor({ conversationId, onClose }: { conversati
             </div>
           ) : (
             <textarea
-              className="w-full h-64 p-3 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none text-sm"
+              className="w-full h-64 p-3 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] resize-none text-sm"
               value={draft}
               onChange={e => setDraft(e.target.value)}
               placeholder="Email draft..."
@@ -44,7 +44,7 @@ export default function FollowUpEditor({ conversationId, onClose }: { conversati
           </button>
           <button 
             disabled={isPending || !draft}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-[var(--color-primary)] text-white text-sm font-medium rounded-md hover:bg-[var(--color-primary-hover)] disabled:opacity-50 transition-colors"
           >
             <Send className="w-4 h-4" />
             Send Follow-up
@@ -54,3 +54,5 @@ export default function FollowUpEditor({ conversationId, onClose }: { conversati
     </div>
   );
 }
+
+

@@ -61,4 +61,15 @@ export interface LeadItem {
   customer_name: string;
   score: number;
   last_activity: string;
+  escalation_triggered?: boolean;
+}
+
+export type ProcessingStatus = 'Uploading' | 'Processing' | 'Ready' | 'Failed' | 'Removing' | 'Removed';
+
+export interface KnowledgeDocument {
+  id: string;
+  filename: string;
+  status: ProcessingStatus;
+  upload_date?: string;
+  size?: string;
 }

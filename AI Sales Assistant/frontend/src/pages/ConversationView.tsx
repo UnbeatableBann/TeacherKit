@@ -54,11 +54,22 @@ export default function ConversationView() {
           <EscalationBanner reason={latestResponse.escalation.reason} />
         )}
         
-        <div className="flex-1 overflow-y-auto p-4 bg-slate-50/50">
+        <div className="flex-1 overflow-y-auto p-4 bg-[var(--color-primary)]/10">
           <ConversationThread messages={messages} />
         </div>
         
         <div className="p-4 bg-white border-t border-slate-200">
+          {messages.length === 0 && (
+            <div className="mb-3">
+              <span className="text-xs text-slate-500 mr-2">Example:</span>
+              <button 
+                onClick={() => setInput("I need an HR management platform for 100 employees. We need attendance tracking, payroll integration and reporting. Budget is ₹4 lakh annually.")}
+                className="text-xs text-[var(--color-primary)] hover:underline text-left"
+              >
+                "I need an HR management platform for 100 employees..."
+              </button>
+            </div>
+          )}
           <div className="flex gap-2">
             <input
               type="text"
@@ -66,13 +77,13 @@ export default function ConversationView() {
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSend()}
               placeholder="Type a customer message to simulate..."
-              className="flex-1 px-4 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="flex-1 px-4 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
               disabled={isPending}
             />
             <button
               onClick={handleSend}
               disabled={isPending}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50"
+              className="px-4 py-2 bg-[var(--color-primary)] text-white rounded-md hover:bg-[var(--color-primary-hover)] disabled:opacity-50"
             >
               {isPending ? 'Sending...' : 'Send'}
             </button>
@@ -109,7 +120,7 @@ export default function ConversationView() {
             <div>
               <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Top Recommendations</h3>
               <div className="space-y-3">
-                {(latestResponse?.recommendations || state?.recommendations_shown).map((rec: any) => (
+                {(latestResponse?.recommendations || state?.recommendations_shown || []).map((rec: any) => (
                   <RecommendationCard key={rec.product_id} recommendation={rec} />
                 ))}
               </div>
@@ -124,3 +135,5 @@ export default function ConversationView() {
     </div>
   );
 }
+
+

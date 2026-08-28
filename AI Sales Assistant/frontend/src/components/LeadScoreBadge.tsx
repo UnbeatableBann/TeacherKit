@@ -1,4 +1,4 @@
-import type { LeadScoreSchema } from '../types';
+﻿import type { LeadScoreSchema } from '../types';
 
 export default function LeadScoreBadge({ score }: { score?: LeadScoreSchema }) {
   if (!score) return null;
@@ -25,3 +25,5 @@ export default function LeadScoreBadge({ score }: { score?: LeadScoreSchema }) {
     </div>
   );
 }
+
+

@@ -8,11 +8,11 @@ export default function Dashboard() {
   const { id: activeId } = useParams();
 
   return (
-    <div className="flex h-screen w-full bg-slate-50 text-slate-900">
+    <div className="flex h-full w-full bg-slate-50 text-slate-900">
       {/* Sidebar */}
       <div className="w-80 flex-shrink-0 border-r border-slate-200 bg-white flex flex-col">
         <div className="p-4 border-b border-slate-200 flex items-center gap-2 font-semibold">
-          <Users className="w-5 h-5 text-indigo-600" />
+          <Users className="w-5 h-5 text-[var(--color-primary)]" />
           Active Leads
         </div>
         <div className="flex-1 overflow-y-auto">
@@ -26,7 +26,7 @@ export default function Dashboard() {
                   to={`/conversations/${lead.conversation_id}`}
                   className={cn(
                     "p-4 border-b border-slate-100 hover:bg-slate-50 flex items-start justify-between cursor-pointer transition-colors",
-                    activeId === lead.conversation_id && "bg-indigo-50/50 border-l-2 border-l-indigo-600"
+                    activeId === lead.conversation_id && "bg-[var(--color-primary)]/10 border-l-2 border-l-[var(--color-primary)]"
                   )}
                 >
                   <div className="flex flex-col">
@@ -36,8 +36,8 @@ export default function Dashboard() {
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    {/* Simulated escalation flag condition based on score for demo */}
-                    {lead.score > 80 && <AlertTriangle className="w-4 h-4 text-amber-500" />}
+                    {/* Using escalation flag from backend if present */}
+                    {lead.escalation_triggered && <AlertTriangle className="w-4 h-4 text-amber-500" />}
                     <span className={cn(
                       "text-xs px-2 py-1 rounded-full font-medium",
                       lead.score >= 70 ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-700"
@@ -65,3 +65,5 @@ export default function Dashboard() {
     </div>
   );
 }
+
+

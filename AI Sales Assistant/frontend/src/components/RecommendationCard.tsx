@@ -1,14 +1,14 @@
-import type { RecommendationSchema } from '../types';
+﻿import type { RecommendationSchema } from '../types';
 import { CheckCircle2 } from 'lucide-react';
 
 export default function RecommendationCard({ recommendation }: { recommendation: RecommendationSchema }) {
   return (
-    <div className="bg-white border border-indigo-100 rounded-lg p-4 shadow-sm relative overflow-hidden group hover:border-indigo-300 transition-colors">
-      <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500"></div>
+    <div className="bg-white border border-[var(--color-primary)]/20 rounded-lg p-4 shadow-sm relative overflow-hidden group hover:border-[var(--color-primary)]/40 transition-colors">
+      <div className="absolute top-0 left-0 w-1 h-full bg-[var(--color-primary)]/100"></div>
       
       <div className="flex justify-between items-start mb-2">
         <h4 className="font-semibold text-slate-900 leading-tight">{recommendation.name}</h4>
-        <span className="font-bold text-indigo-700 whitespace-nowrap ml-2">${recommendation.price}</span>
+        <span className="font-bold text-[var(--color-primary-hover)] whitespace-nowrap ml-2">${recommendation.price}</span>
       </div>
       
       <p className="text-sm text-slate-600 mb-3">{recommendation.reasoning}</p>
@@ -27,3 +27,5 @@ export default function RecommendationCard({ recommendation }: { recommendation:
     </div>
   );
 }
+
+

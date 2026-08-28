@@ -1,4 +1,4 @@
-import { AlertTriangle, UserCheck } from 'lucide-react';
+﻿import { AlertTriangle, UserCheck } from 'lucide-react';
 
 export default function EscalationBanner({ reason }: { reason: string | null }) {
   return (
@@ -22,3 +22,5 @@ export default function EscalationBanner({ reason }: { reason: string | null }) 
     </div>
   );
 }
+
+
