@@ -1,11 +1,29 @@
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field
-
+from pydantic import BaseModel, Field, model_validator
 
 class MessageCreate(BaseModel):
     customer_message: Optional[str] = None
     conversation_history: Optional[List[Dict[str, str]]] = None
+
+    @model_validator(mode='after')
+    def check_exactly_one(self):
+        msg = self.customer_message
+        hist = self.conversation_history
+        
+        has_msg = bool(msg and msg.strip())
+        has_hist = bool(hist and len(hist) > 0)
+        
+        if not (has_msg ^ has_hist):
+            raise ValueError("Exactly one of customer_message or conversation_history must be provided and not empty.")
+            
+        if has_hist:
+            for item in hist:
+                if 'role' not in item or 'content' not in item:
+                    raise ValueError("Conversation history items must contain 'role' and 'content' keys.")
+                if not item['content'].strip():
+                    raise ValueError("Conversation history content cannot be empty.")
+        return self
 
 class RequirementSchema(BaseModel):
     category: Optional[str] = None

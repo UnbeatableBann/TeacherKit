@@ -21,7 +21,7 @@ async def test_process_message_empty(client: AsyncClient):
         f"/conversations/{conv_id}/messages",
         json={"customer_message": "   "}
     )
-    assert response.status_code == 500 or response.status_code == 400
+    assert response.status_code == 422
 
 @pytest.mark.asyncio
 async def test_follow_up_draft(client: AsyncClient):

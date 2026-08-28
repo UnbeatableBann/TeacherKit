@@ -26,10 +26,8 @@ logger = logging.getLogger(__name__)
 
 async def run_orchestrator(conversation_id: str, payload: MessageCreate, db: AsyncSession) -> OrchestratorResponse:
     # 1. Normalize Input
-    # We treat customer_message as the raw input block which could be a single message or a conversation
-    raw_text = payload.customer_message or ""
     try:
-        normalized_input = normalize_input(raw_text)
+        normalized_input = normalize_input(payload)
     except ValueError as e:
         # Fallback to an empty representation if validation fails, although Pydantic usually stops it
         logger.error(f"Failed to normalize input: {e}")

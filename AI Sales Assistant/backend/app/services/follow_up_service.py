@@ -40,10 +40,23 @@ class FollowUpGenerationResult(BaseModel):
     recommendations: List[RecommendationResult] = Field(default_factory=list)
     follow_up_message: str
 
-def normalize_input(raw_content: str) -> NormalizedInput:
-    raw_content = raw_content.strip()
-    if not raw_content:
-        raise ValueError("Input cannot be empty or whitespace")
+from app.schemas.domain import MessageCreate
+
+def normalize_input(payload: MessageCreate) -> NormalizedInput:
+    if payload.conversation_history:
+        messages = []
+        for msg in payload.conversation_history:
+            role = msg["role"]
+            content = msg["content"]
+            if role not in ["customer", "rep", "assistant", "sales_rep"]:
+                # Default to customer if unknown or whatever is requested
+                pass
+            if len(content) > 20000:
+                raise ValueError("Input exceeds maximum allowed length of 20000 characters")
+            messages.append(NormalizedMessage(role=role, content=content.strip()))
+        return NormalizedInput(messages=messages)
+    
+    raw_content = payload.customer_message.strip()
     if len(raw_content) > 20000:
         raise ValueError("Input exceeds maximum allowed length of 20000 characters")
         
@@ -62,7 +75,7 @@ def normalize_input(raw_content: str) -> NormalizedInput:
             elif line.startswith("Sales Rep:") or line.startswith("Sales Representative:"):
                 if current_content:
                     messages.append(NormalizedMessage(role=current_role, content="\n".join(current_content).strip()))
-                current_role = "sales_rep"
+                current_role = "rep"
                 content_start = line.replace("Sales Representative:", "").replace("Sales Rep:", "").strip()
                 if content_start:
                     current_content = [content_start]
