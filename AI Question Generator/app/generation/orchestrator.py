@@ -9,6 +9,7 @@ from app.schemas.domain import (
     GenerateRequest,
     GenerationResponse,
 )
+from app.models.domain import GenerationRequest as DBGenerationRequest, GeneratedQuestion as DBGeneratedQuestion
 from app.validation.validator import QuestionValidator
 
 
@@ -22,7 +23,20 @@ class GenerationOrchestrator:
     async def process_generation_request(
         self, request: GenerateRequest
     ) -> GenerationResponse:
+        db_request = DBGenerationRequest(
+            subject=request.subject,
+            class_level=request.class_level,
+            total_questions=request.total_questions,
+            requested_topic=request.requested_topic,
+            requested_difficulty=request.requested_difficulty,
+            status="processing"
+        )
+        self.db.add(db_request)
+        await self.db.flush()
+
         plan = await self.planner.build_plan(request)
+        db_request.plan_snapshot = plan.model_dump()
+        await self.db.flush()
 
         # Batch generate all questions at once to prevent 429 Too Many Requests
         try:
@@ -30,6 +44,8 @@ class GenerationOrchestrator:
                 plan.questions, request.subject, request.class_level, request.document_ids
             )
         except Exception as e:
+            db_request.status = "failed"
+            await self.db.commit()
             # Handle failure to generate entirely
             raise RuntimeError(f"Failed to generate questions: {e}")
 
@@ -38,15 +54,34 @@ class GenerationOrchestrator:
             is_valid, reason = await self.validator.validate(
                 generated, request.subject
             )
+            
+            db_q = DBGeneratedQuestion(
+                request_id=db_request.id,
+                question_text=generated.question_text,
+                topic=generated.topic,
+                question_type=generated.question_type,
+                difficulty=generated.difficulty,
+                marks=generated.marks,
+                answer=generated.answer.model_dump() if generated.answer else None,
+                marking_scheme=[m.model_dump() for m in generated.marking_scheme] if generated.marking_scheme else None
+            )
+
             if is_valid:
                 generated.validation_status = "passed"
-                generated_questions.append(generated)
+                db_q.validation_status = "passed"
             else:
                 generated.validation_status = f"failed: {reason}"
-                generated_questions.append(generated)
+                db_q.validation_status = "failed"
+                db_q.validation_errors = {"reason": reason}
+            
+            self.db.add(db_q)
+            generated_questions.append(generated)
+
+        db_request.status = "completed"
+        await self.db.commit()
 
         return GenerationResponse(
-            generation_id=str(uuid.uuid4()),
+            generation_id=db_request.id,
             status="completed",
             subject=request.subject,
             class_level=request.class_level,

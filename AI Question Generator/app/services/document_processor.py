@@ -33,11 +33,52 @@ async def process_document_background(document_id: str, content: bytes, filename
             parser = DocumentParser()
             pages = parser.parse_pdf(content, filename)
 
-            # 3. Just mark the document as ready. The user requested to skip LLM extraction during upload.
-            # In the future, we will extract or process the document during generation or store raw chunks.
+            # 3 & 4. Chunk pages to prevent LLM JSON truncation (max output tokens)
+            extractor = QuestionExtractor()
+            analyzer = QuestionAnalyzer()
+            extracted_questions = []
+            analyses = []
+            
+            chunk_size = 5
+            for i in range(0, len(pages), chunk_size):
+                chunk = pages[i : i + chunk_size]
+                chunk_text = "\n\n".join([f"--- Page {p['page_number']} ---\n{p['text']}" for p in chunk])
+                
+                chunk_extracted = await extractor.extract_from_text(chunk_text)
+                if chunk_extracted:
+                    chunk_analyses = await analyzer.analyze_batch(chunk_extracted, "Unknown", "Unknown")
+                    extracted_questions.extend(chunk_extracted)
+                    analyses.extend(chunk_analyses)
+
+            # 5. Save to Vector DB
+            for eq, analysis in zip(extracted_questions, analyses):
+                # We don't have page level granularity for individual questions anymore if they are from full text,
+                # but we can just use 1 for now or try to parse section/page if the model returned it.
+                # Assuming source_question_number or page is not strictly required.
+                
+                db_question = Question(
+                    document_id=doc.id,
+                    source_page=1, # Default to 1 for batched extraction
+                    question_text=eq.question_text,
+                    marks=eq.marks,
+                    options=eq.options,
+                    category=eq.category,
+                    question_type=eq.question_type,
+                    topic=analysis.topic if analysis else "General",
+                    concepts=analysis.concepts if analysis else [],
+                    difficulty=analysis.difficulty if analysis else "Medium",
+                    expected_answer=analysis.expected_answer.model_dump()
+                    if analysis and analysis.expected_answer
+                    else None,
+                )
+
+                # Compute embedding for Vector DB RAG
+                db_question.embedding = await get_embedding(db_question.question_text)
+                db.add(db_question)
+
             doc.status = "ready"
             await db.commit()
-            logger.info(f"Document {document_id} successfully uploaded and marked ready (Skipped LLM extraction).")
+            logger.info(f"Document {document_id} successfully processed, historical questions embedded, and marked ready. Original PDF discarded.")
 
         except Exception as e:
             logger.exception(f"Error processing document {document_id}")

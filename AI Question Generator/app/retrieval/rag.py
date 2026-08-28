@@ -1,35 +1,29 @@
 
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.llm.gemini import get_embedding
-from app.models.domain import Question
+from app.retrieval.vector_store import PGVectorStore
 
 
 class RAGService:
     def __init__(self, db: AsyncSession):
-        self.db = db
+        # In the future, this can be instantiated based on VECTOR_DATABASE_URL
+        self.vector_store = PGVectorStore(db)
 
     async def retrieve_historical_context(
         self, topic: str, difficulty: str, document_ids: list[str], limit: int = 3
-    ) -> list[Question]:
+    ) -> list[dict]:
         """
         Retrieves historical questions for the given topic and difficulty.
-        First filters by metadata, then performs a vector search based on the topic semantics
-        to find relevant historical examples of how this topic was tested.
         """
         topic_embedding = await get_embedding(
             f"Examination questions about {topic} at {difficulty} difficulty"
         )
 
-        stmt = (
-            select(Question)
-            .where(Question.document_id.in_(document_ids))
-            .where(Question.topic == topic)
-            .where(Question.difficulty == difficulty)
-            .order_by(Question.embedding.l2_distance(topic_embedding))
-            .limit(limit)
+        return await self.vector_store.search(
+            query_embedding=topic_embedding,
+            document_ids=document_ids,
+            topic=topic,
+            difficulty=difficulty,
+            limit=limit
         )
-
-        result = await self.db.execute(stmt)
-        return result.scalars().all()

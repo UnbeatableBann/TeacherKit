@@ -14,7 +14,7 @@ router = APIRouter()
 
 DbSession = Annotated[AsyncSession, Depends(get_db)]
 
-@router.post("/documents", response_model=DocumentResponse)
+@router.post("/documents/process", response_model=DocumentResponse)
 async def upload_document(
     background_tasks: BackgroundTasks,
     file: Annotated[UploadFile, File(...)],

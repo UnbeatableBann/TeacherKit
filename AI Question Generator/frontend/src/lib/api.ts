@@ -11,7 +11,7 @@ export async function uploadDocument(
     formData.append("file", file);
 
     const xhr = new XMLHttpRequest();
-    xhr.open("POST", `${API_BASE}/documents`);
+    xhr.open("POST", `${API_BASE}/documents/process`);
 
     // Track upload progress
     if (xhr.upload && onProgress) {

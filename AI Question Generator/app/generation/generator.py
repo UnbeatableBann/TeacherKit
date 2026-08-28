@@ -31,7 +31,7 @@ class QuestionGenerator:
             plans[0].topic, plans[0].difficulty.value, document_ids
         )
         context_str = "\n".join(
-            [f"- {q.question_text} (Marks: {q.marks})" for q in historical_context]
+            [f"- {q['question_text']} (Marks: {q['marks']})" for q in historical_context]
         )
 
         system_prompt = (
