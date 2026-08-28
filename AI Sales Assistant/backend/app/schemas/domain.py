@@ -66,3 +66,22 @@ class ConversationStateResponse(BaseModel):
     summary: Optional[str] = None
     lead_score: Optional[LeadScoreSchema] = None
     recommendations_shown: List[RecommendationSchema] = Field(default_factory=list)
+
+from datetime import datetime
+
+
+class KnowledgeDocumentResponse(BaseModel):
+    id: str
+    filename: str
+    status: str
+    size: int
+    created_at: datetime
+    
+    model_config = {"from_attributes": True}
+
+class KnowledgeDocumentListResponse(BaseModel):
+    documents: List[KnowledgeDocumentResponse]
+
+class KnowledgeDocumentUploadResponse(BaseModel):
+    document_id: str
+    status: str

@@ -62,7 +62,7 @@ async def generate_followup(
     db: AsyncSession = Depends(get_db)
 ):
     from app.orchestrator import load_session_state
-    from app.plugins.follow_up_generator import FollowUpGeneratorPlugin
+    from app.plugins.generation.follow_up_generator import FollowUpGeneratorPlugin
     
     state = await load_session_state(conversation_id, db)
     plugin = FollowUpGeneratorPlugin()

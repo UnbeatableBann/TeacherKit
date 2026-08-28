@@ -5,7 +5,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.api import catalogue, conversations, escalations, leads
+from app.api import conversations, escalations, knowledge_base, leads
 
 log = structlog.get_logger()
 
@@ -17,7 +17,7 @@ async def lifespan(app: FastAPI):
     log.info("Shutting down AI Sales Assistant Backend")
 
 
-app = FastAPI(title="AI Sales Assistant", lifespan=lifespan)
+app = FastAPI(title="AI Sales Assistant API", version="1.0.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -27,10 +27,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(conversations.router, prefix="/conversations", tags=["conversations"])
-app.include_router(leads.router, prefix="/leads", tags=["leads"])
-app.include_router(catalogue.router, prefix="/catalogue", tags=["catalogue"])
-app.include_router(escalations.router, prefix="/escalations", tags=["escalations"])
+app.include_router(conversations.router, prefix="/conversations", tags=["Conversations"])
+app.include_router(leads.router, prefix="/leads", tags=["Leads"])
+app.include_router(escalations.router, prefix="/escalations", tags=["Escalations"])
+app.include_router(knowledge_base.router, prefix="/knowledge-base", tags=["Knowledge Base"])
 
 
 

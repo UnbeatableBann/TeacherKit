@@ -16,7 +16,7 @@ async def resolve_escalation(
     db: AsyncSession = Depends(get_db)
 ):
     stmt = update(Escalation).where(Escalation.id == escalation_id).values(
-        resolved_at=datetime.utcnow(),
+        resolved_at=datetime.now(),
         assigned_rep_id=rep_id
     )
     result = await db.execute(stmt)

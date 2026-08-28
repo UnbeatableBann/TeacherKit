@@ -40,7 +40,7 @@ export default function CatalogueAdmin() {
     const interval = setInterval(async () => {
       let changed = false;
       const updatedDocs = await Promise.all(documents.map(async doc => {
-        if (doc.status === 'Processing' || doc.status === 'Uploading') {
+        if ((doc.status === 'Processing' || doc.status === 'Uploading') && !doc.id.startsWith('temp-')) {
           const updated = await checkDocumentStatus(doc.id);
           if (updated && updated.status !== doc.status) {
             changed = true;

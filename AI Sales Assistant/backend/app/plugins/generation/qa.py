@@ -1,4 +1,3 @@
-import json
 from typing import Any, Dict
 
 from app.llm_client import generate_structured
@@ -7,16 +6,16 @@ from app.plugins.base import PluginBase, PluginContext, SessionState
 
 class QAPlugin(PluginBase):
     async def run(self, state: SessionState, context: PluginContext) -> Dict[str, Any]:
-        retrieved_products = context.plugin_data.get("retrieved_products", [])
+        retrieved_context_text = context.plugin_data.get("retrieved_context_text", "")
         
         prompt = f"""
 Customer Message:
 {context.new_message}
 
-Candidate Products:
-{json.dumps(retrieved_products)}
+Knowledge Base Context:
+{retrieved_context_text}
 
-Does the customer ask a question? If so, answer it ONLY using the Candidate Products data.
+Does the customer ask a question? If so, answer it ONLY using the Knowledge Base Context.
 If the answer is not in the data, add the question to 'unanswerable_questions' and do NOT guess.
 
 Format:

@@ -4,10 +4,11 @@ from datetime import datetime
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
-from app.models.base import Base
 
+class Base(DeclarativeBase):
+    pass
 
 class Customer(Base):
     __tablename__ = "customers"
@@ -16,8 +17,9 @@ class Customer(Base):
     name: Mapped[str] = mapped_column(String)
     contact_info: Mapped[str] = mapped_column(String)  # Hashed/Redacted in practice
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    
+
     conversations = relationship("Conversation", back_populates="customer")
+
 
 class Conversation(Base):
     __tablename__ = "conversations"
@@ -31,7 +33,10 @@ class Conversation(Base):
 
     customer = relationship("Customer", back_populates="conversations")
     messages = relationship("Message", back_populates="conversation")
-    requirements = relationship("ExtractedRequirement", back_populates="conversation", uselist=False)
+    requirements = relationship(
+        "ExtractedRequirement", back_populates="conversation", uselist=False
+    )
+
 
 class Message(Base):
     __tablename__ = "messages"
@@ -43,28 +48,45 @@ class Message(Base):
 
     conversation = relationship("Conversation", back_populates="messages")
 
-class Product(Base):
-    __tablename__ = "products"
+
+class KnowledgeDocument(Base):
+    __tablename__ = "knowledge_documents"
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     tenant_id: Mapped[str] = mapped_column(String, index=True)
-    name: Mapped[str] = mapped_column(String)
-    category: Mapped[str] = mapped_column(String)
-    price: Mapped[float] = mapped_column(Float)
-    currency: Mapped[str] = mapped_column(String)
-    specs: Mapped[dict] = mapped_column(JSONB)
-    stock_status: Mapped[str] = mapped_column(String)
-    description: Mapped[str] = mapped_column(Text)
-    last_updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    filename: Mapped[str] = mapped_column(String)
+    content_type: Mapped[str] = mapped_column(String)
+    size: Mapped[int] = mapped_column(Integer)
+    status: Mapped[str] = mapped_column(String)  # processing, ready, failed, deleting, deleted
+    checksum: Mapped[str] = mapped_column(String, index=True)
+    metadata_: Mapped[dict] = mapped_column(JSONB, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
 
-class ProductEmbedding(Base):
-    __tablename__ = "product_embeddings"
-    product_id: Mapped[str] = mapped_column(String, ForeignKey("products.id"), primary_key=True)
-    embedding = mapped_column(Vector(768)) # Voyage-large-2 dimension
-    embedding_model_version: Mapped[str] = mapped_column(String)
+    chunks = relationship("KnowledgeChunk", back_populates="document", cascade="all, delete-orphan")
+
+
+class KnowledgeChunk(Base):
+    __tablename__ = "knowledge_chunks"
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    document_id: Mapped[str] = mapped_column(String, ForeignKey("knowledge_documents.id"))
+    chunk_index: Mapped[int] = mapped_column(Integer)
+    content: Mapped[str] = mapped_column(Text)
+    page_number: Mapped[int] = mapped_column(Integer, nullable=True)
+    section: Mapped[str] = mapped_column(String, nullable=True)
+    metadata_: Mapped[dict] = mapped_column(JSONB, default=dict)
+    embedding = mapped_column(Vector(768))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    document = relationship("KnowledgeDocument", back_populates="chunks")
+
 
 class ExtractedRequirement(Base):
     __tablename__ = "extracted_requirements"
-    conversation_id: Mapped[str] = mapped_column(String, ForeignKey("conversations.id"), primary_key=True)
+    conversation_id: Mapped[str] = mapped_column(
+        String, ForeignKey("conversations.id"), primary_key=True
+    )
     category: Mapped[str] = mapped_column(String, nullable=True)
     features_wanted: Mapped[list] = mapped_column(JSONB, default=list)
     budget_min: Mapped[float] = mapped_column(Float, nullable=True)
@@ -75,6 +97,7 @@ class ExtractedRequirement(Base):
 
     conversation = relationship("Conversation", back_populates="requirements")
 
+
 class RequirementHistory(Base):
     __tablename__ = "requirement_history"
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
@@ -84,15 +107,17 @@ class RequirementHistory(Base):
     new_value: Mapped[dict] = mapped_column(JSONB, nullable=True)
     changed_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
+
 class Recommendation(Base):
     __tablename__ = "recommendations"
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     conversation_id: Mapped[str] = mapped_column(String, ForeignKey("conversations.id"))
-    product_id: Mapped[str] = mapped_column(String, ForeignKey("products.id"))
+    product_id: Mapped[str] = mapped_column(String)  # No longer a foreign key to products
     reasoning: Mapped[str] = mapped_column(Text)
     confidence: Mapped[float] = mapped_column(Float)
     shown_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     was_validated: Mapped[bool] = mapped_column(Boolean, default=False)
+
 
 class Objection(Base):
     __tablename__ = "objections"
@@ -102,12 +127,16 @@ class Objection(Base):
     raw_text: Mapped[str] = mapped_column(Text)
     resolution_status: Mapped[str] = mapped_column(String, default="unresolved")
 
+
 class LeadScore(Base):
     __tablename__ = "lead_scores"
-    conversation_id: Mapped[str] = mapped_column(String, ForeignKey("conversations.id"), primary_key=True)
+    conversation_id: Mapped[str] = mapped_column(
+        String, ForeignKey("conversations.id"), primary_key=True
+    )
     score: Mapped[int] = mapped_column(Integer)
     breakdown: Mapped[dict] = mapped_column(JSONB)
     computed_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
 
 class FollowUp(Base):
     __tablename__ = "follow_ups"
@@ -117,6 +146,7 @@ class FollowUp(Base):
     sent_status: Mapped[str] = mapped_column(String, default="draft")
     sent_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
 
+
 class Escalation(Base):
     __tablename__ = "escalations"
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
@@ -125,6 +155,7 @@ class Escalation(Base):
     triggered_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     assigned_rep_id: Mapped[str] = mapped_column(String, nullable=True)
     resolved_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
+
 
 class PluginExecutionLog(Base):
     __tablename__ = "plugin_execution_logs"

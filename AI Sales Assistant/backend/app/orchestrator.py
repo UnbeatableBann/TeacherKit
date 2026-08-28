@@ -1,16 +1,16 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.plugins.actions.escalation import EscalationPlugin
+from app.plugins.actions.next_best_action import NextBestActionPlugin
+from app.plugins.analysis.conversation_summary import ConversationSummaryPlugin
+from app.plugins.analysis.intent_extraction import IntentExtractionPlugin
+from app.plugins.analysis.lead_scoring import LeadScoringPlugin
+from app.plugins.analysis.objection_handling import ObjectionHandlingPlugin
 from app.plugins.base import PluginContext, SessionState
-from app.plugins.catalogue_retrieval import CatalogueRetrievalPlugin
-from app.plugins.conversation_summary import ConversationSummaryPlugin
-from app.plugins.escalation import EscalationPlugin
-from app.plugins.grounding_validator import GroundingValidatorPlugin
-from app.plugins.intent_extraction import IntentExtractionPlugin
-from app.plugins.lead_scoring import LeadScoringPlugin
-from app.plugins.next_best_action import NextBestActionPlugin
-from app.plugins.objection_handling import ObjectionHandlingPlugin
-from app.plugins.qa import QAPlugin
-from app.plugins.recommendation import RecommendationPlugin
+from app.plugins.generation.qa import QAPlugin
+from app.plugins.generation.recommendation import RecommendationPlugin
+from app.plugins.retrieval.catalogue_retrieval import CatalogueRetrievalPlugin
+from app.plugins.validation.grounding_validator import GroundingValidatorPlugin
 from app.schemas.domain import MessageCreate, OrchestratorResponse
 
 
