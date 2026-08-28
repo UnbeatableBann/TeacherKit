@@ -25,7 +25,6 @@ async def generate_structured[T](
 
     config = types.GenerateContentConfig(
         system_instruction=system_prompt,
-        max_output_tokens=4096,
         response_mime_type="application/json",
         response_schema=response_schema.model_json_schema(),
         automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),

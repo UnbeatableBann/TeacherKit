@@ -33,14 +33,22 @@ async def process_document_background(document_id: str, content: bytes, filename
             parser = DocumentParser()
             pages = parser.parse_pdf(content, filename)
 
-            # 3. Extract all questions at once from full text
-            full_text = "\n\n".join([f"--- Page {p['page_number']} ---\n{p['text']}" for p in pages])
+            # 3 & 4. Chunk pages to prevent LLM JSON truncation (max output tokens)
             extractor = QuestionExtractor()
-            extracted_questions = await extractor.extract_from_text(full_text)
-
-            # 4. Analyze all questions at once
             analyzer = QuestionAnalyzer()
-            analyses = await analyzer.analyze_batch(extracted_questions, "Unknown", "Unknown")
+            extracted_questions = []
+            analyses = []
+            
+            chunk_size = 5
+            for i in range(0, len(pages), chunk_size):
+                chunk = pages[i : i + chunk_size]
+                chunk_text = "\n\n".join([f"--- Page {p['page_number']} ---\n{p['text']}" for p in chunk])
+                
+                chunk_extracted = await extractor.extract_from_text(chunk_text)
+                if chunk_extracted:
+                    chunk_analyses = await analyzer.analyze_batch(chunk_extracted, "Unknown", "Unknown")
+                    extracted_questions.extend(chunk_extracted)
+                    analyses.extend(chunk_analyses)
 
             # 5. Save to DB
             for eq, analysis in zip(extracted_questions, analyses):
