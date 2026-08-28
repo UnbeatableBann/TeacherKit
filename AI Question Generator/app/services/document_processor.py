@@ -42,18 +42,36 @@ async def process_document_background(document_id: str, content: bytes, filename
             analyses = []
             
             chunk_size = 5
-            for i in range(0, len(pages), chunk_size):
+            overlap = 1
+            step = chunk_size - overlap
+            seen_questions = set()
+            
+            # Ensure it processes at least once, up to the end of pages
+            for i in range(0, max(1, len(pages)), step):
+                # Break if we've already processed the last chunk completely in previous steps
+                if i >= len(pages) and i != 0:
+                    break
+                    
                 chunk = pages[i : i + chunk_size]
                 chunk_text = "\n\n".join([f"--- Page {p['page_number']} ---\n{p['text']}" for p in chunk])
                 
                 chunk_extracted = await extractor.extract_from_text(chunk_text)
+                
                 if chunk_extracted:
-                    # Pass the document subject and class if available, else omit them to let the analyzer infer
-                    subj = doc.subject if doc.subject else "General Subject"
-                    lvl = doc.class_level if doc.class_level else "General Class"
-                    chunk_analyses = await analyzer.analyze_batch(chunk_extracted, subj, lvl)
-                    extracted_questions.extend(chunk_extracted)
-                    analyses.extend(chunk_analyses)
+                    # Deduplicate across chunk overlaps
+                    unique_chunk_extracted = []
+                    for eq in chunk_extracted:
+                        norm_text = eq.question_text.strip().lower()
+                        if norm_text not in seen_questions:
+                            seen_questions.add(norm_text)
+                            unique_chunk_extracted.append(eq)
+                            
+                    if unique_chunk_extracted:
+                        subj = doc.subject if doc.subject else "General Subject"
+                        lvl = doc.class_level if doc.class_level else "General Class"
+                        chunk_analyses = await analyzer.analyze_batch(unique_chunk_extracted, subj, lvl)
+                        extracted_questions.extend(unique_chunk_extracted)
+                        analyses.extend(chunk_analyses)
 
             # 5. Batch Compute Embeddings for all extracted questions
             if extracted_questions:

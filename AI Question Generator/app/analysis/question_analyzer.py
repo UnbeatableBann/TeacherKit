@@ -12,7 +12,7 @@ class BatchAnalysisResult(BaseModel):
 class QuestionAnalyzer:
     async def analyze_batch(
         self, questions: list[ExtractedQuestionSchema], subject: str, class_level: str
-    ) -> list[AnalyzedQuestionSchema | None]:
+    ) -> list[AnalyzedQuestionSchema]:
         """
         Analyzes a batch of extracted questions to determine topic, concepts, difficulty, and expected answer.
         """
@@ -37,15 +37,17 @@ class QuestionAnalyzer:
         prompt = "\n".join(prompt_lines)
 
         try:
-            await generate_structured(
+            result = await generate_structured(
                 prompt=prompt,
                 response_schema=BatchAnalysisResult,
                 system_prompt=system_prompt,
             )
             
-            # Just return the None objects to let the caller handle defaults for now
-            # so we don't break the original stub implementation's API contract.
-            return [None for _ in questions]
-        except Exception as e:  # noqa: BLE001
-            print(f"Failed to analyze questions: {e}")
-            return [None] * len(questions)
+            if len(result.results) != len(questions):
+                raise RuntimeError(
+                    f"Analyzer returned {len(result.results)} results, expected {len(questions)}"
+                )
+            return result.results
+            
+        except Exception as e:
+            raise RuntimeError(f"Failed to analyze questions: {e}") from e

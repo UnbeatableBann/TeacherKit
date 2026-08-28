@@ -1,6 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.llm.gemini import get_embedding
 from app.models.domain import Question
 from app.schemas.domain import GeneratedQuestionResponse
@@ -29,20 +30,20 @@ class QuestionValidator:
         # 2. Similarity validation
         embedding = await get_embedding(generated.question_text)
 
-        # Calculate l2_distance or cosine distance depending on how pgvector is queried.
-        # pgvector l2_distance is <->
+        # Calculate cosine distance and fetch it
         stmt = (
-            select(Question)
-            .order_by(Question.embedding.l2_distance(embedding))
+            select(Question.id, Question.embedding.cosine_distance(embedding).label("distance"))
+            .order_by("distance")
             .limit(1)
         )
         result = await self.db.execute(stmt)
-        closest_question = result.scalar_one_or_none()
+        row = result.first()
 
-        if closest_question:
-            # We assume embedding distance check here;
-            # for a true cosine similarity, we could use <=> operator in pgvector.
-            # Simple heuristic for this implementation:
-            pass  # In a production scenario, strictly evaluate the distance value against settings.SIMILARITY_THRESHOLD.
+        if row is not None:
+            _closest_id, distance = row
+            # cosine_distance = 1 - cosine_similarity
+            similarity = 1.0 - distance
+            if similarity >= settings.SIMILARITY_THRESHOLD:
+                return False, f"Question is too similar to historical question (similarity: {similarity:.2f})"
 
         return True, ""

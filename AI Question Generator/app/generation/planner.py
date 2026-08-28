@@ -1,4 +1,5 @@
 from collections import defaultdict
+from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,6 +11,31 @@ from app.schemas.domain import GenerateRequest, GenerationPlanSchema, QuestionPl
 class GenerationPlanner:
     def __init__(self, db: AsyncSession):
         self.db = db
+
+    def _allocate(self, counts: dict, total: int, default: Any) -> list:
+        if not counts:
+            return [default] * total
+            
+        total_historical = sum(counts.values())
+        allocation = {}
+        remainders = {}
+        
+        for k, v in counts.items():
+            exact = (v / total_historical) * total
+            allocation[k] = int(exact)
+            remainders[k] = exact - int(exact)
+            
+        allocated_total = sum(allocation.values())
+        
+        # distribute remainder
+        sorted_remainders = sorted(remainders.keys(), key=lambda k: remainders[k], reverse=True)
+        for i in range(total - allocated_total):
+            allocation[sorted_remainders[i % len(sorted_remainders)]] += 1
+            
+        result = []
+        for k, count in allocation.items():
+            result.extend([k] * count)
+        return result
 
     async def build_plan(self, request: GenerateRequest) -> GenerationPlanSchema:
         """
@@ -38,49 +64,49 @@ class GenerationPlanner:
             if q.marks:
                 marks_counts[q.marks] += 1
 
-        planned_questions: list[QuestionPlanSchema] = []
-        for i in range(request.total_questions):
-            # Resolve user constraints or fallback to historical majority
-            topic = request.requested_topic
-            if not topic:
-                topic = (
-                    max(topic_counts, key=lambda k: topic_counts[k])
-                    if topic_counts
-                    else "General"
-                )
-
-            difficulty = request.requested_difficulty
-            if not difficulty:
-                diff_str = (
-                    max(difficulty_counts, key=lambda k: difficulty_counts[k])
-                    if difficulty_counts
-                    else "Medium"
-                )
-                # Cast the string to DifficultyLevel if it matches, otherwise use Medium
-                try:
-                    difficulty = DifficultyLevel(diff_str)
-                except ValueError:
-                    difficulty = DifficultyLevel.MEDIUM
-
-            q_type_str = (
-                max(type_counts, key=lambda k: type_counts[k]) if type_counts else "Short Answer"
-            )
+        total = request.total_questions
+        
+        if request.requested_topic:
+            allocated_topics = [request.requested_topic] * total
+        else:
+            allocated_topics = self._allocate(topic_counts, total, "General")
+            
+        if request.requested_difficulty:
             try:
-                q_type = QuestionType(q_type_str)
+                diff_val = DifficultyLevel(request.requested_difficulty)
             except ValueError:
-                q_type = QuestionType.SHORT_ANSWER
+                diff_val = DifficultyLevel.MEDIUM
+            allocated_diffs = [diff_val] * total
+        else:
+            diff_strs = self._allocate(difficulty_counts, total, "Medium")
+            allocated_diffs = []
+            for d in diff_strs:
+                try:
+                    allocated_diffs.append(DifficultyLevel(d))
+                except ValueError:
+                    allocated_diffs.append(DifficultyLevel.MEDIUM)
 
-            marks = max(marks_counts, key=lambda k: marks_counts[k]) if marks_counts else 2.0
+        type_strs = self._allocate(type_counts, total, "Short Answer")
+        allocated_types = []
+        for t in type_strs:
+            try:
+                allocated_types.append(QuestionType(t))
+            except ValueError:
+                allocated_types.append(QuestionType.SHORT_ANSWER)
 
+        allocated_marks = self._allocate(marks_counts, total, 2.0)
+
+        planned_questions: list[QuestionPlanSchema] = []
+        for i in range(total):
             planned_questions.append(
                 QuestionPlanSchema(
-                    topic=topic,
-                    difficulty=difficulty,
-                    marks=marks,
-                    question_type=q_type,
+                    topic=allocated_topics[i],
+                    difficulty=allocated_diffs[i],
+                    marks=allocated_marks[i],
+                    question_type=allocated_types[i],
                 )
             )
 
         return GenerationPlanSchema(
-            total_questions=request.total_questions, questions=planned_questions
+            total_questions=total, questions=planned_questions
         )
