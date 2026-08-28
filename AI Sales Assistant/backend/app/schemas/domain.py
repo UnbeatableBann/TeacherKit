@@ -44,7 +44,7 @@ class RecommendationSchema(BaseModel):
     id: str = ""
     name: str
     reasoning: str
-    sources: List[Dict[str, Any]] = Field(default_factory=list)
+    sources: List[str] = Field(default_factory=list)
     model_config = {"from_attributes": True}
 
 class AnsweredQuestionSchema(BaseModel):
@@ -73,6 +73,7 @@ class OrchestratorResponse(BaseModel):
     requirements: RequirementSchema
     objections: List[ObjectionSchema]
     recommendations: List[RecommendationSchema]
+    follow_up_message: Optional[str] = None
     answered_questions: List[AnsweredQuestionSchema]
     unanswerable_questions: List[str]
     lead_score: LeadScoreSchema

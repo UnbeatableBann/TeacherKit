@@ -1,4 +1,4 @@
-﻿import type { RecommendationSchema } from '../types';
+import type { RecommendationSchema } from '../types';
 import { CheckCircle2 } from 'lucide-react';
 
 export default function RecommendationCard({ recommendation }: { recommendation: RecommendationSchema }) {
@@ -8,18 +8,17 @@ export default function RecommendationCard({ recommendation }: { recommendation:
       
       <div className="flex justify-between items-start mb-2">
         <h4 className="font-semibold text-slate-900 leading-tight">{recommendation.name}</h4>
-        <span className="font-bold text-[var(--color-primary-hover)] whitespace-nowrap ml-2">${recommendation.price}</span>
       </div>
       
       <p className="text-sm text-slate-600 mb-3">{recommendation.reasoning}</p>
       
-      {recommendation.matched_features?.length > 0 && (
+      {recommendation.sources?.length > 0 && (
         <div className="space-y-1">
-          <div className="text-xs font-semibold text-slate-500">Matched Features</div>
-          {recommendation.matched_features.map((f, i) => (
+          <div className="text-xs font-semibold text-slate-500">Sources</div>
+          {recommendation.sources.map((s, i) => (
             <div key={i} className="flex items-start gap-1.5 text-xs text-slate-700">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 mt-0.5 shrink-0" />
-              <span>{f}</span>
+              <span>{s}</span>
             </div>
           ))}
         </div>

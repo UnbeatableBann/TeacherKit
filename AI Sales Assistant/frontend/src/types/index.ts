@@ -14,12 +14,10 @@ export interface ObjectionSchema {
 }
 
 export interface RecommendationSchema {
-  product_id: string;
+  id: string;
   name: string;
-  price: number;
-  matched_features: string[];
   reasoning: string;
-  confidence: number;
+  sources: string[];
 }
 
 export interface AnsweredQuestionSchema {
@@ -48,6 +46,7 @@ export interface OrchestratorResponse {
   requirements: RequirementSchema;
   objections: ObjectionSchema[];
   recommendations: RecommendationSchema[];
+  follow_up_message: string | null;
   answered_questions: AnsweredQuestionSchema[];
   unanswerable_questions: string[];
   lead_score: LeadScoreSchema;

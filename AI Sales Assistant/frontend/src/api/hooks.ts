@@ -75,3 +75,21 @@ export function useGenerateFollowUp() {
     }
   });
 }
+
+export function useCreateConversation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ customer_name }: { customer_name: string }) => {
+      const res = await fetch(`${API_URL}/conversations`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ customer_name })
+      });
+      if (!res.ok) throw new Error('Failed to create conversation');
+      return res.json() as Promise<{ conversation_id: string }>;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+    }
+  });
+}

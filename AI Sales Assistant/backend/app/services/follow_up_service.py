@@ -34,7 +34,7 @@ class CustomerAnalysis(BaseModel):
 class RecommendationResult(BaseModel):
     name: str
     reason: str
-    sources: List[Dict[str, Any]] = Field(default_factory=list)
+    sources: List[str] = Field(default_factory=list)
 
 class FollowUpGenerationResult(BaseModel):
     recommendations: List[RecommendationResult] = Field(default_factory=list)

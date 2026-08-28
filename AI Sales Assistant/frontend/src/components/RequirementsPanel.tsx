@@ -15,7 +15,7 @@ export default function RequirementsPanel({ requirements }: { requirements?: Req
         <span className="text-sm font-medium">
           {(requirements.budget_min === null && requirements.budget_max === null) 
             ? <span className="text-slate-400 italic">Not identified</span> 
-            : `${requirements.budget_min ? `$${requirements.budget_min}` : 'Any'} - ${requirements.budget_max ? `$${requirements.budget_max}` : 'Any'}`}
+            : `${requirements.budget_min ? requirements.budget_min : 'Any'} - ${requirements.budget_max ? requirements.budget_max : 'Any'}`}
         </span>
       </div>
       
