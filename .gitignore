@@ -37,5 +37,6 @@ Thumbs.db
 AI Question Generator/alembic.ini
 AI Sales Assistant/backend/alembic.ini
 
-# TODO
+# Miscellaneous
+IMPLEMENTATION_REPORT.md
 TODO.md
