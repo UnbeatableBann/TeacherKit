@@ -48,6 +48,7 @@ class LLMStrategy:
                     "missing": response.missing_concepts,
                     "misconceptions": response.detected_misconceptions,
                     "error_type": response.error_type,
+                    "subject_mismatch": response.subject_mismatch,
                 },
             )
         except Exception as e:  # noqa: BLE001

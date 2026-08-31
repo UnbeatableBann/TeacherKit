@@ -117,6 +117,7 @@ class ErrorAnalysis(BaseModel):
     severity: str = "none"
     explanation: str | None = None
     distance_from_correct: dict[str, float | str] = Field(default_factory=dict)
+    subject_mismatch: bool = False
 
 
 class Feedback(BaseModel):

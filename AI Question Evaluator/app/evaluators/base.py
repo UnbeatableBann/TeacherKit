@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from statistics import mean
 
-from app.domain.enums import EvaluationStatus
+from app.domain.enums import EvaluationStatus, EvidenceStatus
 from app.domain.models.requests import (
     ConceptAnalysis,
     Dimension,
@@ -23,7 +23,32 @@ class SubjectPlugin(ABC):
         return [s for s in self.strategies if s.applicable(c)]
 
     def evaluate(self, c: EvaluationRequest) -> EvaluationResponse:
-        ev = [s.evaluate(c) for s in self.applicable(c)]
+        ev = []
+        for s in self.applicable(c):
+            e = s.evaluate(c)
+            ev.append(e)
+            if e.strategy == "security_check" and e.status == EvidenceStatus.FAIL.value:
+                return EvaluationResponse(
+                    status=EvaluationStatus.EVALUATION_FAILURE,
+                    score=0.0,
+                    confidence=1.0,
+                    dimensions={},
+                    concept_analysis=ConceptAnalysis(),
+                    error_analysis=ErrorAnalysis(
+                        explanation="Security violation detected.",
+                        severity="critical",
+                        error_type="prompt_injection",
+                    ),
+                    feedback=Feedback(
+                        summary="Evaluation aborted due to security policy.",
+                        explanation="The input violates system safety policies.",
+                    ),
+                    metadata={
+                        "plugin": self.name,
+                        "strategies": ["security_check"],
+                        "source": c.student_answer.source,
+                    },
+                )
 
         # Check if LLM explicitly failed
         llm_failure = next((e for e in ev if e.status == "evaluation_failure"), None)
@@ -138,10 +163,10 @@ class SubjectPlugin(ABC):
         dims = {
             "correctness": Dimension(score=score, evidence=list(dict.fromkeys(d for e in ev for d in e.details))),
             "completeness": Dimension(
-                score=round(
+                score=min(100.0, round(
                     100 * len(concepts.correct) / max(1, total_expected),
                     2,
-                ),
+                )),
                 evidence=[
                     f"{len(concepts.correct)} concepts covered; {len(concepts.missing)} missing."
                 ],
@@ -152,6 +177,10 @@ class SubjectPlugin(ABC):
             "clarity": Dimension(score=100, evidence=["No default clarity penalty applied."]),
         }
         error = ErrorAnalysis()
+        error.subject_mismatch = any(
+            bool(e.payload.get("subject_mismatch"))
+            for e in ev if e.payload
+        )
         if status != EvaluationStatus.CORRECT:
             explicit_error_type = next(
                 (

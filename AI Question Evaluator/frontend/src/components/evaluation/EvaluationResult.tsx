@@ -114,6 +114,21 @@ export function EvaluationResult({ result, request }: EvaluationResultProps) {
           </section>
         )}
 
+        {result.error_analysis.subject_mismatch && (
+          <section>
+            <h3 className="font-semibold text-[#B45309] border-b border-border pb-2 mb-3">Subject Irrelevance</h3>
+            <div className="bg-[#FEF9C3] border border-[#FEF08A] rounded-md p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <AlertTriangle className="h-4 w-4 text-[#B45309]" />
+                <span className="font-medium text-[#B45309]">
+                  Question Irrelevant to Selected Subject
+                </span>
+              </div>
+              <p className="text-sm text-[#713F12] mt-2">The content of this question does not appear to match the selected subject category. The evaluation below might be flawed due to missing subject-specific context.</p>
+            </div>
+          </section>
+        )}
+
         {result.error_analysis.error_type && (
           <section>
             <h3 className="font-semibold text-[#B91C1C] border-b border-border pb-2 mb-3">Issues identified</h3>

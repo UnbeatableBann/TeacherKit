@@ -4,6 +4,7 @@ from app.strategies.core import (
     ExactStrategy,
     NumericStrategy,
     OptionStrategy,
+    SecurityStrategy,
     Strategy,
     UnitBasedStrategy,
 )
@@ -16,6 +17,7 @@ class GeneralPlugin(SubjectPlugin):
     @property
     def strategies(self) -> list[Strategy]:
         return [
+            SecurityStrategy(),
             OptionStrategy(),
             ExactStrategy(),
             NumericStrategy(),

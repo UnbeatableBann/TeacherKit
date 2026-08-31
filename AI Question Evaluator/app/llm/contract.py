@@ -28,6 +28,10 @@ class LLMEvidenceResponse(BaseModel):
     improvement_guidance: str | None = Field(
         default=None, description="Hints or feedback for the student on how to improve."
     )
+    subject_mismatch: bool = Field(
+        default=False,
+        description="True if the question's content is completely unrelated to the declared subject category."
+    )
 
 
 class LLMEvaluator(ABC):

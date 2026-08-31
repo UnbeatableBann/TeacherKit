@@ -4,6 +4,7 @@ from app.strategies.core import (
     ExactStrategy,
     GrammarStrategy,
     OptionStrategy,
+    SecurityStrategy,
     Strategy,
     UnitBasedStrategy,
 )
@@ -16,6 +17,7 @@ class EnglishPlugin(SubjectPlugin):
     @property
     def strategies(self) -> list[Strategy]:
         return [
+            SecurityStrategy(),
             OptionStrategy(),
             ExactStrategy(),
             ConceptStrategy(),

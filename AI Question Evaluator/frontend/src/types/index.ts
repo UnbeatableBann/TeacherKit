@@ -57,6 +57,7 @@ export interface ErrorAnalysis {
   severity: "none" | "minor" | "major" | "critical";
   explanation?: string;
   distance_from_correct?: Record<string, any>;
+  subject_mismatch?: boolean;
 }
 
 export interface Feedback {

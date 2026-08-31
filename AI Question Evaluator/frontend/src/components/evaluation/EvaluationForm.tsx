@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,6 +11,29 @@ interface EvaluationFormProps {
   isLoading: boolean;
 }
 
+const CATEGORY_TYPES: Record<QuestionCategory, { value: QuestionType; label: string }[]> = {
+  subjective: [
+    { value: "explanation", label: "Explanation" },
+    { value: "short_answer", label: "Short Answer" },
+    { value: "descriptive", label: "Descriptive" },
+    { value: "essay", label: "Essay" },
+    { value: "proof", label: "Proof" },
+    { value: "derivation", label: "Derivation" },
+  ],
+  objective: [
+    { value: "exact_answer", label: "Exact Answer" },
+    { value: "mcq", label: "MCQ" },
+    { value: "multiple_select", label: "Multiple Select" },
+    { value: "true_false", label: "True / False" },
+    { value: "fill_in_the_blank", label: "Fill in the Blank" },
+  ],
+  numerical: [
+    { value: "numeric", label: "Numeric" },
+    { value: "formula", label: "Formula" },
+    { value: "unit_based", label: "Unit-based" },
+  ],
+};
+
 export function EvaluationForm({ onSubmit, isLoading }: EvaluationFormProps) {
   const [subject, setSubject] = useState<Subject>("science");
   const [classLevel, setClassLevel] = useState<ClassLevel>("std_8");
@@ -21,9 +44,38 @@ export function EvaluationForm({ onSubmit, isLoading }: EvaluationFormProps) {
   const [referenceText, setReferenceText] = useState("Plants use sunlight as an energy source to convert carbon dioxide and water into glucose, releasing oxygen.");
   const [expectedConcepts, setExpectedConcepts] = useState("energy source, convert carbon dioxide and water, glucose, releasing oxygen");
   const [studentAnswer, setStudentAnswer] = useState("Plants need sunlight to make food.");
+  
+  // New state for MCQ options
+  const [mcqOptions, setMcqOptions] = useState("A: True\nB: False");
+  const [correctOptionIds, setCorrectOptionIds] = useState("A");
+
+  // Sync category and type
+  useEffect(() => {
+    const allowedTypes = CATEGORY_TYPES[category].map(t => t.value);
+    if (!allowedTypes.includes(type)) {
+      setType(allowedTypes[0]);
+    }
+  }, [category, type]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    let parsedOptions = undefined;
+    if (type === "mcq" || type === "multiple_select") {
+       parsedOptions = mcqOptions.split("\n").filter(Boolean).map((line, idx) => {
+         const parts = line.split(":");
+         return {
+           id: parts[0]?.trim() || String(idx),
+           text: parts.slice(1).join(":").trim() || line
+         };
+       });
+       // Ensure at least 2 options for validation
+       if (parsedOptions.length < 2) {
+           parsedOptions.push({ id: "dummy1", text: "Dummy Option 1" });
+           parsedOptions.push({ id: "dummy2", text: "Dummy Option 2" });
+       }
+    }
+
     const request: EvaluationRequest = {
       question: {
         id: "q" + Date.now(),
@@ -32,10 +84,12 @@ export function EvaluationForm({ onSubmit, isLoading }: EvaluationFormProps) {
         class_level: classLevel,
         category,
         type,
+        ...(parsedOptions ? { options: parsedOptions } : {})
       },
       reference_answer: {
         text: referenceText,
         expected_concepts: expectedConcepts.split(",").map(c => c.trim()).filter(Boolean),
+        ...(type === "mcq" || type === "multiple_select" ? { correct_option_ids: correctOptionIds.split(",").map(id => id.trim()) } : {})
       },
       student_answer: {
         content: studentAnswer,
@@ -44,6 +98,8 @@ export function EvaluationForm({ onSubmit, isLoading }: EvaluationFormProps) {
     };
     onSubmit(request);
   };
+
+  const isOptionType = type === "mcq" || type === "multiple_select";
 
   return (
     <Card className="glass-panel">
@@ -85,12 +141,9 @@ export function EvaluationForm({ onSubmit, isLoading }: EvaluationFormProps) {
             <div className="space-y-2">
               <Label>Type</Label>
               <NativeSelect value={type} onChange={e => setType(e.target.value as QuestionType)}>
-                <option value="explanation">Explanation</option>
-                <option value="short_answer">Short Answer</option>
-                <option value="proof">Proof</option>
-                <option value="mcq">MCQ</option>
-                <option value="numeric">Numeric</option>
-                <option value="unit_based">Unit-based</option>
+                {CATEGORY_TYPES[category].map(t => (
+                  <option key={t.value} value={t.value}>{t.label}</option>
+                ))}
               </NativeSelect>
             </div>
           </div>
@@ -106,9 +159,32 @@ export function EvaluationForm({ onSubmit, isLoading }: EvaluationFormProps) {
               />
             </div>
             
+            {isOptionType && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-muted/50 p-4 rounded-md">
+                <div className="space-y-2">
+                  <Label>Options (Format: ID: Text)</Label>
+                  <Textarea 
+                    value={mcqOptions}
+                    onChange={e => setMcqOptions(e.target.value)}
+                    className="h-24"
+                    placeholder="A: Option 1&#10;B: Option 2"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Correct Option IDs (Comma-separated)</Label>
+                  <Textarea 
+                    value={correctOptionIds}
+                    onChange={e => setCorrectOptionIds(e.target.value)}
+                    className="h-24"
+                    placeholder="A, B"
+                  />
+                </div>
+              </div>
+            )}
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Reference Answer</Label>
+                <Label>Reference Answer / Text</Label>
                 <Textarea 
                   value={referenceText}
                   onChange={e => setReferenceText(e.target.value)}

@@ -5,6 +5,7 @@ from app.strategies.core import (
     FormulaStrategy,
     NumericStrategy,
     OptionStrategy,
+    SecurityStrategy,
     Strategy,
     UnitBasedStrategy,
 )
@@ -17,6 +18,7 @@ class MathematicsPlugin(SubjectPlugin):
     @property
     def strategies(self) -> list[Strategy]:
         return [
+            SecurityStrategy(),
             OptionStrategy(),
             ExactStrategy(),
             NumericStrategy(),

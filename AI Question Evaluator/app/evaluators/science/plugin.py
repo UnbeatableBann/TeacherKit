@@ -3,6 +3,7 @@ from app.strategies.core import (
     ConceptStrategy,
     ExactStrategy,
     OptionStrategy,
+    SecurityStrategy,
     Strategy,
     UnitBasedStrategy,
 )
@@ -15,6 +16,7 @@ class SciencePlugin(SubjectPlugin):
     @property
     def strategies(self) -> list[Strategy]:
         return [
+            SecurityStrategy(),
             OptionStrategy(),
             ExactStrategy(),
             ConceptStrategy(),
