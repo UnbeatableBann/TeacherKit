@@ -6,7 +6,7 @@ class PromptBuilder:
     @staticmethod
     def get_subject_instructions(subject: Subject) -> str:
         if subject == Subject.MATHEMATICS:
-            return "Evaluate mathematical correctness, logical reasoning, formula application, intermediate steps, final answer, proof/derivation correctness."
+            return "Evaluate mathematical correctness, logical reasoning, formula application, intermediate steps, final answer, proof/derivation correctness. If the student answer is correct in converted unit, then correct the answer. For example, the student has used different unit to answer the question not mentioned in the actual question but the answer is correct. Then grant score to it."
         elif subject == Subject.SCIENCE:
             return "Evaluate scientific correctness, conceptual understanding, factual accuracy, cause/effect reasoning, expected concepts, and scientific misconceptions."
         elif subject == Subject.HISTORY:
